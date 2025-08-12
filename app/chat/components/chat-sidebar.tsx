@@ -25,25 +25,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserButton } from "@clerk/nextjs";
+import { ConversationType } from "@/types";
 import { Plus, Search, MoreHorizontal, Trash2, Edit3 } from "lucide-react";
 
-const chatHistory = [
-  { id: "1", title: "React Best Practices" },
-  { id: "2", title: "Next.js App Router Guide" },
-  { id: "3", title: "TypeScript Tips" },
-  { id: "4", title: "CSS Grid vs Flexbox" },
-  { id: "5", title: "API Design Patterns" },
-  { id: "6", title: "Database Optimization" },
-  { id: "7", title: "Authentication Strategies" },
-  { id: "8", title: "Performance Monitoring" },
-];
+interface ChatSidebarProps {
+  conversations: ConversationType[];
+}
 
-export function ChatSidebar() {
+export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
   const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredChats = chatHistory.filter((chat) =>
-    chat.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredChats = conversations.filter((chat) => {
+    return chat.id.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <Sidebar className="border-r border-border/40">
@@ -88,7 +81,7 @@ export function ChatSidebar() {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="truncate text-sm font-medium">
-                          {chat.title}
+                          {chat.title || chat.id || "Untitled Chat"}
                         </div>
                       </div>
                     </a>
@@ -129,4 +122,4 @@ export function ChatSidebar() {
       </SidebarFooter>
     </Sidebar>
   );
-}
+};
