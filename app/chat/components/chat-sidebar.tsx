@@ -27,6 +27,7 @@ import {
 import { UserButton } from "@clerk/nextjs";
 import { ConversationType } from "@/types";
 import { Plus, Search, MoreHorizontal, Trash2, Edit3 } from "lucide-react";
+import Link from "next/link";
 
 interface ChatSidebarProps {
   conversations: ConversationType[];
@@ -41,10 +42,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
   return (
     <Sidebar className="border-r border-border/40">
       <SidebarHeader className="border-b border-border/40 p-4">
-        <Button className="w-full justify-start gap-2 h-10" size="default">
-          <Plus className="h-4 w-4" />
-          New Chat
-        </Button>
+        <Link href="/chat" className="w-full">
+          <Button className="w-full justify-start gap-2 h-10" size="default">
+            <Plus className="h-4 w-4" />
+            New Chat
+          </Button>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="px-2">
