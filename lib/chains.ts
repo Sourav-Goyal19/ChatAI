@@ -1,6 +1,6 @@
 import LLMS from "./llms";
 import Parsers from "./parsers";
-import { queryPrompt } from "./prompt";
+import { queryPrompt } from "./prompts";
 
 export const queryChain = queryPrompt
   .pipe(LLMS.moonshotai)

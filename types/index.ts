@@ -9,7 +9,7 @@ export type ConversationType = {
   lastActivityAt: Date | null;
 };
 
-export type versionGroup = {
+export type VersionGroupType = {
   messages: MessageType[];
   id: string;
   createdAt: Date;

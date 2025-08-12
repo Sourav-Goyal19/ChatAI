@@ -3,22 +3,22 @@
 import type React from "react";
 
 import { z } from "zod";
+import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
+import MDEditor from "@uiw/react-md-editor";
 import { Card } from "@/components/ui/card";
+import { useParams } from "next/navigation";
 import { Send, User, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQueryStore } from "@/zustand/store";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { VersionGroupType, MessageType } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useParams } from "next/navigation";
-import { useQueryStore } from "@/zustand/store";
-import MDEditor from "@uiw/react-md-editor";
-import toast from "react-hot-toast";
-import { versionGroup, MessageType } from "@/types";
 
 interface ChatHomePageProps {
-  versionGroups: versionGroup[];
+  versionGroups: VersionGroupType[];
 }
 
 export const ChatHomePage: React.FC<ChatHomePageProps> = ({
@@ -30,7 +30,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [versionGroups, setVersionGroups] =
-    useState<versionGroup[]>(initialVersionGroups);
+    useState<VersionGroupType[]>(initialVersionGroups);
 
   const allMessages = versionGroups.flatMap((group) => group.messages);
 
@@ -61,31 +61,29 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
 
   const onSubmit = async (values: FormType) => {
     if (!values.query.trim()) return;
-    setIsLoading(true);
+    // setIsLoading(true);
     form.reset();
 
     try {
-      // Create a temporary user message (will be replaced by server response)
-      const tempUserMessage: MessageType = {
+      const tempVersionGroup: VersionGroupType = {
         id: `temp-${Date.now()}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        conversationId: params.chatId as string,
-        versionGroupId: `temp-group-${Date.now()}`,
-        sender: "user",
-        content: values.query,
-        role: "user",
-        files: [],
-        streaming: false,
-      };
-
-      // Create a temporary version group for this exchange
-      const tempVersionGroup: versionGroup = {
-        id: `temp-group-${Date.now()}`,
         createdAt: new Date(),
         conversationId: params.chatId as string,
         versions: [],
-        messages: [tempUserMessage],
+        messages: [
+          {
+            id: `temp-user-${Date.now()}`,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            conversationId: params.chatId as string,
+            versionGroupId: `temp-${Date.now()}`,
+            sender: "user",
+            content: values.query,
+            role: "user",
+            files: [],
+            streaming: false,
+          },
+        ],
       };
 
       setVersionGroups((prev) => [...prev, tempVersionGroup]);
@@ -95,22 +93,59 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         body: JSON.stringify({ query: values.query }),
       });
 
-      if (!res.ok) {
-        throw new Error(await res.text());
+      if (!res.ok) throw new Error(await res.text());
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      form.reset();
+
+      const tempAIMessage: MessageType = {
+        id: `temp-ai-${Date.now()}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        conversationId: params.chatId as string,
+        versionGroupId: tempVersionGroup.id,
+        sender: "assistant",
+        content: "",
+        role: "assistant",
+        files: [],
+        streaming: true,
+      };
+
+      setVersionGroups((prev) =>
+        prev.map((group) =>
+          group.id === tempVersionGroup.id
+            ? { ...group, messages: [...group.messages, tempAIMessage] }
+            : group
+        )
+      );
+
+      while (true) {
+        const { done, value } = await reader!.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        fullText += chunk;
+
+        setVersionGroups((prev) =>
+          prev.map((group) =>
+            group.id === tempVersionGroup.id
+              ? {
+                  ...group,
+                  messages: group.messages.map((msg) =>
+                    msg.id === tempAIMessage.id
+                      ? { ...msg, content: fullText, streaming: false }
+                      : msg
+                  ),
+                }
+              : group
+          )
+        );
       }
-
-      const data = await res.json();
-
-      // Replace temporary version group with the one from server
-      setVersionGroups((prev) => [
-        ...prev.filter((g) => g.id !== tempVersionGroup.id),
-        data.versionGroup,
-      ]);
     } catch (error: any) {
       console.error(error);
-      toast.error(
-        error.message || "An error occurred while processing your request"
-      );
+      toast.error(error.message || "An error occurred");
       form.setValue("query", values.query);
     } finally {
       setIsLoading(false);
