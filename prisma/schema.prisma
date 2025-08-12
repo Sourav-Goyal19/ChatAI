@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -17,8 +11,8 @@ datasource db {
 model User {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
   clerkId       String         @unique
-  name          String
-  email         String
+  name          String?
+  email         String?
   avatarUrl     String?
   conversations Conversation[]
   files         File[]
@@ -29,41 +23,46 @@ model User {
 
 model Conversation {
   id                String           @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String           @db.ObjectId
+  userId            String
   title             String?
   model             String?
   contextWindowSize Int?
   lastActivityAt    DateTime?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  user              User             @relation(fields: [userId], references: [id])
+  user              User             @relation(fields: [userId], references: [clerkId])
   messages          Message[]
   contextSegments   ContextSegment[]
+  versionGroups     VersionGroup[]
+}
+
+model VersionGroup {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String       @db.ObjectId
+  versions       String[]     @db.ObjectId
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  Message        Message[]
 }
 
 model Message {
   id             String        @id @default(auto()) @map("_id") @db.ObjectId
   conversationId String        @db.ObjectId
+  versionGroupId String?       @db.ObjectId
   sender         String
   content        String
   role           String
   files          String[]      @db.ObjectId
-  edited         Boolean       @default(false)
-  editHistory    EditHistory[]
   streaming      Boolean       @default(false)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   conversation   Conversation  @relation(fields: [conversationId], references: [id])
-}
-
-type EditHistory {
-  content  String
-  editedAt DateTime
+  versionGroup   VersionGroup? @relation(fields: [versionGroupId], references: [id])
 }
 
 model File {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String   @db.ObjectId
+  userId          String
   conversationId  String?  @db.ObjectId
   messageId       String?  @db.ObjectId
   fileName        String
@@ -72,18 +71,18 @@ model File {
   storageProvider String
   storageUrl      String
   createdAt       DateTime @default(now())
-  user            User     @relation(fields: [userId], references: [id])
+  user            User     @relation(fields: [userId], references: [clerkId])
 }
 
 model Memory {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
+  userId    String
   key       String
   value     String
   source    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [clerkId])
 }
 
 model ContextSegment {

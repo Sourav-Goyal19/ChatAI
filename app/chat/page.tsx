@@ -1,69 +1,89 @@
 "use client";
-import { MessageSquare, Lightbulb, Code, BookOpen } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { useUser } from "@clerk/nextjs";
-import { useEffect } from "react";
-import axios from "axios";
 
-const suggestions = [
-  {
-    icon: MessageSquare,
-    title: "Start a conversation",
-    description: "Ask me anything you'd like to know",
-  },
-  {
-    icon: Code,
-    title: "Help with coding",
-    description: "Get assistance with programming problems",
-  },
-  {
-    icon: Lightbulb,
-    title: "Brainstorm ideas",
-    description: "Generate creative solutions together",
-  },
-  {
-    icon: BookOpen,
-    title: "Learn something new",
-    description: "Explore topics that interest you",
-  },
-];
+import type React from "react";
+
+import { z } from "zod";
+import axios from "axios";
+import { useRef } from "react";
+import { Send } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { useForm } from "react-hook-form";
+import { ConversationType } from "@/types";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryStore } from "@/zustand/store";
 
 export default function ChatHomePage() {
-  const { isSignedIn } = useUser();
+  const router = useRouter();
+  const { setQuery } = useQueryStore();
+  const textareaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isSignedIn) {
-      axios.post("/api/users/save-user", {});
+  const formSchema = z.object({
+    query: z.string().min(1, "Empty query is not allowed"),
+  });
+
+  type FormType = z.infer<typeof formSchema>;
+
+  const form = useForm<FormType>({
+    defaultValues: {
+      query: "",
+    },
+    resolver: zodResolver(formSchema),
+  });
+
+  const onSubmit = async (values: FormType) => {
+    if (!values.query.trim()) return;
+    try {
+      const res = await axios.post("/api/conversation/create", {});
+      console.log(res);
+      const conversation = res.data.conversation as ConversationType;
+      setQuery(values.query);
+      router.push(`/chat/${conversation.id}`);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response.data.error || "Something went wrong");
     }
-  }, [isSignedIn]);
-  return (
-    <div className="flex flex-col items-center justify-center h-full p-8">
-      <div className="max-w-2xl mx-auto text-center space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">
-            How can I help you today?
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Start a new conversation or continue where you left off
-          </p>
-        </div>
+  };
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-          {suggestions.map((suggestion, index) => (
-            <Card
-              key={index}
-              className="cursor-pointer hover:bg-accent/50 transition-colors"
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      form.handleSubmit(onSubmit)();
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-4"></div>
+
+      <div className="sticky bottom-0 bg-card border-t border-border p-4">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="max-w-3xl mx-auto w-full"
+        >
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 relative">
+              <Textarea
+                {...form.register("query")}
+                placeholder="Type your message here..."
+                className="min-h-[44px] max-h-[120px] resize-none pr-12"
+                onKeyDown={handleKeyDown}
+                rows={1}
+              />
+              <div ref={textareaRef} />
+            </div>
+            <Button
+              type="submit"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              disabled={form.formState.isSubmitting}
             >
-              <CardContent className="p-6 text-center space-y-3">
-                <suggestion.icon className="h-8 w-8 mx-auto text-primary" />
-                <h3 className="font-semibold">{suggestion.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {suggestion.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );
