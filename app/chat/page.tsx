@@ -36,7 +36,7 @@ export default function ChatHomePage() {
   const onSubmit = async (values: FormType) => {
     if (!values.query.trim()) return;
     try {
-      const res = await axios.post("/api/conversation/create", {});
+      const res = await axios.post("/api/conversations/create", {});
       console.log(res);
       const conversation = res.data.conversation as ConversationType;
       setQuery(values.query);
@@ -58,7 +58,7 @@ export default function ChatHomePage() {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4"></div>
 
-      <div className="sticky bottom-0 bg-card border-t border-border p-4">
+      <div className="sticky bottom-0 border-t border-border p-4 bg-sidebar">
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="max-w-3xl mx-auto w-full"
@@ -68,7 +68,7 @@ export default function ChatHomePage() {
               <Textarea
                 {...form.register("query")}
                 placeholder="Type your message here..."
-                className="min-h-[44px] max-h-[120px] resize-none pr-12"
+                className="min-h-[44px] max-h-[120px] resize-none pr-12 bg-background"
                 onKeyDown={handleKeyDown}
                 rows={1}
               />

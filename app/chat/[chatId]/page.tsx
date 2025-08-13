@@ -1,8 +1,8 @@
 import React from "react";
 import mongoose from "mongoose";
-import client from "@/lib/prismadb";
 import { redirect } from "next/navigation";
 import { ChatHomePage } from "./chat-home";
+import { getVersionGroups } from "@/lib/get-versions";
 
 interface ChatIdLayoutProps {
   params: Promise<{
@@ -16,21 +16,7 @@ const ChatIdLayout: React.FC<ChatIdLayoutProps> = async ({ params }) => {
     redirect("/chat");
   }
 
-  const versionGroups = await client.versionGroup.findMany({
-    where: {
-      conversationId: chatId,
-    },
-    include: {
-      messages: {
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-  });
+  const versionGroups = await getVersionGroups(chatId);
 
   // console.log(versionGroups);
   return (
