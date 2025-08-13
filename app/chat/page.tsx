@@ -4,21 +4,30 @@ import type React from "react";
 
 import { z } from "zod";
 import axios from "axios";
-import { useRef } from "react";
 import { Send } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 import { useForm } from "react-hook-form";
+import { useEffect, useRef } from "react";
 import { ConversationType } from "@/types";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useQueryStore } from "@/zustand/store";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryStore } from "@/zustand/store";
 
 export default function ChatHomePage() {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const { setQuery } = useQueryStore();
   const textareaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saveUser = async () => {
+      await axios.post("/api/users/save-user", {});
+    };
+    isSignedIn && saveUser();
+  }, [isSignedIn]);
 
   const formSchema = z.object({
     query: z.string().min(1, "Empty query is not allowed"),

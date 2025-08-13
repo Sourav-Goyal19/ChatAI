@@ -42,6 +42,7 @@ model VersionGroup {
   versions       String[]     @db.ObjectId
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id])
+  index          Int          @default(0)
   messages       Message[]
 }
 

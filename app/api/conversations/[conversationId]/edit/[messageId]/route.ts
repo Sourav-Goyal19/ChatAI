@@ -1,14 +1,25 @@
 import { z } from "zod";
-import { isValidObjectId } from "mongoose";
-import { NextRequest, NextResponse } from "next/server";
+import { streamText } from "ai";
 import client from "@/lib/prismadb";
 import { memories } from "@/lib/mem0";
-import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
+import { createGroq } from "@ai-sdk/groq";
+import { isValidObjectId } from "mongoose";
 import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { NextRequest, NextResponse } from "next/server";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 const editQuerySchema = z.object({
   editedQuery: z.string().min(1, "Edited query is required"),
+});
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: process.env.OPENROUTER_BASE_URL,
+});
+
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 export async function PUT(
@@ -101,25 +112,31 @@ export async function PUT(
       }),
     ]);
 
-    const history = versionGroups.reverse().flatMap((group) => {
-      return group.messages.map((msg) => ({
+    const history = versionGroups
+      .reverse()
+      .flatMap((group) => {
+        const startIdx = group.index % 2 === 0 ? group.index : group.index - 1;
+        return group.messages.slice(startIdx, startIdx + 2);
+      })
+      .map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
-    });
 
-    const memoriesUpToDate = relevantMemories.filter((memory) => {
-      return (
-        memory.created_at && memory.created_at < editedVersionGroup.createdAt
-      );
-    });
+    const memoriesUpToDate = relevantMemories.filter(
+      (memory) =>
+        memory.created_at &&
+        new Date(memory.created_at) < editedVersionGroup.createdAt
+    );
 
     const memoriesStr = memoriesUpToDate
       .map((entry) => entry.memory)
       .join("\n");
 
     const text = streamText({
-      model: google("gemini-1.5-flash"),
+      // model: google("gemini-1.5-flash"),
+      model: groq("moonshotai/kimi-k2-instruct"),
+      // model: openrouter("deepseek/deepseek-chat-v3-0324:free"),
       messages: [
         ...history,
         {
@@ -139,13 +156,10 @@ export async function PUT(
           },
         });
         await client.versionGroup.update({
-          where: {
-            id: editedVersionGroup.id,
-          },
+          where: { id: editedVersionGroup.id },
           data: {
-            versions: {
-              push: [editMessage.id, aiMessage.id],
-            },
+            versions: { push: [editMessage.id, aiMessage.id] },
+            index: editedVersionGroup.versions.length,
           },
         });
 

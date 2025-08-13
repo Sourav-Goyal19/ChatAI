@@ -56,9 +56,10 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
 
     versionGroups.forEach((group) => {
       const currentIndex = currentVersionIndices[group.id] || 0;
-      const startIndex = currentIndex * 2;
-      const endIndex = startIndex + 2;
-      const currentMessages = group.messages.slice(startIndex, endIndex);
+      const currentMessages = group.messages.slice(
+        currentIndex,
+        currentIndex + 2
+      );
       messages.push(...currentMessages);
     });
 
@@ -98,30 +99,53 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     const group = versionGroups.find((g) => g.id === groupId);
     if (!group) return { current: 0, total: 0 };
 
-    const totalVersions = Math.ceil(group.messages.length / 2);
-    const currentVersion = (currentVersionIndices[groupId] || 0) + 1;
+    const totalPairs = Math.floor(group.messages.length / 2);
+    const currentPair = (currentVersionIndices[groupId] || 0) / 2 + 1;
 
-    return { current: currentVersion, total: totalVersions };
+    return { current: currentPair, total: totalPairs };
   };
 
-  const navigateVersion = (groupId: string, direction: "prev" | "next") => {
+  const navigateVersion = async (
+    groupId: string,
+    direction: "prev" | "next"
+  ) => {
     const group = versionGroups.find((g) => g.id === groupId);
     if (!group) return;
 
-    const totalVersions = Math.ceil(group.messages.length / 2);
+    const messagePairs = Math.floor(group.messages.length / 2);
     const currentIndex = currentVersionIndices[groupId] || 0;
 
     let newIndex = currentIndex;
     if (direction === "prev" && currentIndex > 0) {
-      newIndex = currentIndex - 1;
-    } else if (direction === "next" && currentIndex < totalVersions - 1) {
-      newIndex = currentIndex + 1;
+      newIndex = currentIndex - 2;
+    } else if (direction === "next" && currentIndex < (messagePairs - 1) * 2) {
+      newIndex = currentIndex + 2;
     }
 
-    setCurrentVersionIndices((prev) => ({
-      ...prev,
-      [groupId]: newIndex,
-    }));
+    try {
+      const response = await fetch(
+        `/api/conversations/${params.chatId}/update-group/${groupId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ index: newIndex }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update version");
+
+      setCurrentVersionIndices((prev) => ({
+        ...prev,
+        [groupId]: newIndex,
+      }));
+
+      await refreshVersions();
+    } catch (error) {
+      console.error("Error switching versions:", error);
+      toast.error("Failed to switch versions");
+    }
   };
 
   const formSchema = z.object({
@@ -539,7 +563,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         </div>
       </div>
 
-      <div className="border-t border-border bg-card p-4">
+      <div className="border-t border-border bg-sidebar p-4">
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="max-w-3xl mx-auto"
@@ -549,7 +573,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
               <Textarea
                 {...form.register("query")}
                 placeholder="Type your message here..."
-                className="min-h-[44px] max-h-[120px] resize-none"
+                className="min-h-[44px] max-h-[120px] resize-none bg-background"
                 onKeyDown={handleKeyDown}
                 id="querybox"
                 rows={1}

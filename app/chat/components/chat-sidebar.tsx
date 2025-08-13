@@ -50,7 +50,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-2 overflow-hidden">
         <SidebarGroup>
           <SidebarGroupContent>
             <div className="px-2 py-2">

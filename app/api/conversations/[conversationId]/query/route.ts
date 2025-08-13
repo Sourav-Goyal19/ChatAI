@@ -5,12 +5,23 @@ import { streamText } from "ai";
 import client from "@/lib/prismadb";
 import { memories } from "@/lib/mem0";
 import { google } from "@ai-sdk/google";
+import { createGroq } from "@ai-sdk/groq";
 import { SYSTEM_PROMPT } from "@/lib/prompts";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 const querySchema = z.object({
   query: z.string().min(1, "Query is required"),
+});
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: process.env.OPENROUTER_BASE_URL,
+});
+
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 // const memory = new Memory({
@@ -100,15 +111,22 @@ export async function POST(
       .map((entry) => `- ${entry.memory}`)
       .join("\n");
 
-    const history = versionGroups.reverse().flatMap((group) =>
-      group.messages.map((msg) => ({
+    const history = versionGroups
+      .reverse()
+      .flatMap((group) => {
+        const adjustedIndex =
+          group.index % 2 === 0 ? group.index : group.index - 1;
+        return group.messages.slice(adjustedIndex, adjustedIndex + 2);
+      })
+      .map((msg) => ({
         role: msg.role,
         content: msg.content,
-      }))
-    );
+      }));
 
     const stream = streamText({
-      model: google("gemini-1.5-flash"),
+      // model: google("gemini-1.5-flash"),
+      // model: groq("moonshotai/kimi-k2-instruct"),
+      model: openrouter("deepseek/deepseek-chat-v3-0324:free"),
       messages: [...history, { role: "user", content: query }],
       system: SYSTEM_PROMPT.replace("{memories}", memoriesStr),
       onFinish: async (finishResponse) => {
