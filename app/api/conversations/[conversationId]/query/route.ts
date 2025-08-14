@@ -125,8 +125,8 @@ export async function POST(
 
     const stream = streamText({
       // model: google("gemini-1.5-flash"),
-      // model: groq("moonshotai/kimi-k2-instruct"),
-      model: openrouter("deepseek/deepseek-chat-v3-0324:free"),
+      model: groq("moonshotai/kimi-k2-instruct"),
+      // model: openrouter("deepseek/deepseek-chat-v3-0324:free"),
       messages: [...history, { role: "user", content: query }],
       system: SYSTEM_PROMPT.replace("{memories}", memoriesStr),
       onFinish: async (finishResponse) => {

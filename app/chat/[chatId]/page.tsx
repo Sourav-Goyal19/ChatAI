@@ -1,7 +1,7 @@
 import React from "react";
 import mongoose from "mongoose";
 import { redirect } from "next/navigation";
-import { ChatHomePage } from "./chat-home";
+import { ChatHomePage } from "./components/chat-home";
 import { getVersionGroups } from "@/lib/get-versions";
 
 interface ChatIdLayoutProps {
