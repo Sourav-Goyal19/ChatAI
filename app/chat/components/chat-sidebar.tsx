@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import axios from "axios";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { UserButton } from "@clerk/nextjs";
+import { ConversationType } from "@/types";
+import { useMutation } from "@tanstack/react-query";
+import { Plus, Search, MoreHorizontal, Trash2, Edit3 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,8 +21,6 @@ import {
   SidebarMenuAction,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,19 +28,58 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserButton } from "@clerk/nextjs";
-import { ConversationType } from "@/types";
-import { Plus, Search, MoreHorizontal, Trash2, Edit3 } from "lucide-react";
-import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+import { usePathname, useRouter } from "next/navigation";
 
 interface ChatSidebarProps {
   conversations: ConversationType[];
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
+  const pathname = usePathname();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const filteredChats = conversations.filter((chat) => {
-    return chat.id.toLowerCase().includes(searchQuery.toLowerCase());
+  const [filteredChats, setFilteredChats] =
+    useState<ConversationType[]>(conversations);
+
+  useEffect(() => {
+    const filtered = conversations.filter((chat) =>
+      chat.id.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredChats(filtered);
+    console.log(pathname);
+  }, [searchQuery, conversations]);
+
+  const mutation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      const res = await axios.delete(
+        `/api/conversations/${conversationId}/delete`
+      );
+      return res.data;
+    },
+    onSuccess: ({
+      message,
+      conversation,
+    }: {
+      message: string;
+      conversation: ConversationType;
+    }) => {
+      setFilteredChats((prev) =>
+        prev.filter((chat) => chat.id != conversation.id)
+      );
+      if (pathname == `/chat/${conversation.id}`) {
+        router.push("/chat");
+      }
+      toast.success(message);
+    },
+    onError: (err: any) => {
+      console.error("Failed to delete conversation", err);
+      toast.error(
+        err.response.data.error || err.message || "Something bad happened"
+      );
+    },
   });
 
   return (
@@ -101,7 +144,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
                         Rename
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => mutation.mutate(chat.id)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>

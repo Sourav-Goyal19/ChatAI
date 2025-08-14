@@ -211,105 +211,105 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     console.log(values);
     console.log(files);
 
-    // try {
-    //   const tempVersionGroup: VersionGroupType = {
-    //     id: `temp-${Date.now()}`,
-    //     createdAt: new Date(),
-    //     conversationId: params.chatId as string,
-    //     versions: [],
-    //     messages: [
-    //       {
-    //         id: `temp-user-${Date.now()}`,
-    //         createdAt: new Date(),
-    //         updatedAt: new Date(),
-    //         conversationId: params.chatId as string,
-    //         versionGroupId: `temp-${Date.now()}`,
-    //         sender: "user",
-    //         content: values.query,
-    //         role: "user",
-    //         files: files.map((file) => ({
-    //           name: file.name,
-    //           type: file.type,
-    //           size: file.size,
-    //         })),
-    //         streaming: false,
-    //       },
-    //     ],
-    //   };
+    try {
+      const tempVersionGroup: VersionGroupType = {
+        id: `temp-${Date.now()}`,
+        createdAt: new Date(),
+        conversationId: params.chatId as string,
+        versions: [],
+        messages: [
+          {
+            id: `temp-user-${Date.now()}`,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            conversationId: params.chatId as string,
+            versionGroupId: `temp-${Date.now()}`,
+            sender: "user",
+            content: values.query,
+            role: "user",
+            files: files.map((file) => ({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+            })),
+            streaming: false,
+          },
+        ],
+      };
 
-    //   setVersionGroups((prev) => [...prev, tempVersionGroup]);
+      setVersionGroups((prev) => [...prev, tempVersionGroup]);
 
-    //   const formData = new FormData();
-    //   formData.append("query", values.query);
-    //   files.forEach((file, index) => {
-    //     formData.append(`files[${index}]`, file);
-    //   });
+      const formData = new FormData();
+      formData.append("query", values.query);
+      files.forEach((file, index) => {
+        formData.append(`files[${index}]`, file);
+      });
 
-    //   const res = await fetch(
-    //     `/api/conversations/${params.chatId}/query-file`,
-    //     {
-    //       method: "POST",
-    //       body: formData,
-    //     }
-    //   );
-    //   if (!res.ok) throw new Error(await res.text());
+      const res = await fetch(
+        `/api/conversations/${params.chatId}/query-file`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
 
-    //   const reader = res.body?.getReader();
-    //   const decoder = new TextDecoder();
-    //   let fullText = "";
-    //   form.reset();
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      form.reset();
 
-    //   const tempAIMessage: MessageType = {
-    //     id: `temp-ai-${Date.now()}`,
-    //     createdAt: new Date(),
-    //     updatedAt: new Date(),
-    //     conversationId: params.chatId as string,
-    //     versionGroupId: tempVersionGroup.id,
-    //     sender: "assistant",
-    //     content: "",
-    //     role: "assistant",
-    //     files: [],
-    //     streaming: true,
-    //   };
+      const tempAIMessage: MessageType = {
+        id: `temp-ai-${Date.now()}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        conversationId: params.chatId as string,
+        versionGroupId: tempVersionGroup.id,
+        sender: "assistant",
+        content: "",
+        role: "assistant",
+        files: [],
+        streaming: true,
+      };
 
-    //   setVersionGroups((prev) =>
-    //     prev.map((group) =>
-    //       group.id === tempVersionGroup.id
-    //         ? { ...group, messages: [...group.messages, tempAIMessage] }
-    //         : group
-    //     )
-    //   );
+      setVersionGroups((prev) =>
+        prev.map((group) =>
+          group.id === tempVersionGroup.id
+            ? { ...group, messages: [...group.messages, tempAIMessage] }
+            : group
+        )
+      );
 
-    //   while (true) {
-    //     const { done, value } = await reader!.read();
-    //     if (done) break;
+      while (true) {
+        const { done, value } = await reader!.read();
+        if (done) break;
 
-    //     const chunk = decoder.decode(value);
-    //     fullText += chunk;
+        const chunk = decoder.decode(value);
+        fullText += chunk;
 
-    //     setVersionGroups((prev) =>
-    //       prev.map((group) =>
-    //         group.id === tempVersionGroup.id
-    //           ? {
-    //               ...group,
-    //               messages: group.messages.map((msg) =>
-    //                 msg.id === tempAIMessage.id
-    //                   ? { ...msg, content: fullText, streaming: false }
-    //                   : msg
-    //               ),
-    //             }
-    //           : group
-    //       )
-    //     );
-    //   }
-    //   await refreshVersions();
-    // } catch (error: any) {
-    //   console.error(error);
-    //   toast.error(error.message || "An error occurred");
-    //   form.setValue("query", values.query);
-    // } finally {
-    //   setIsLoading(false);
-    // }
+        setVersionGroups((prev) =>
+          prev.map((group) =>
+            group.id === tempVersionGroup.id
+              ? {
+                  ...group,
+                  messages: group.messages.map((msg) =>
+                    msg.id === tempAIMessage.id
+                      ? { ...msg, content: fullText, streaming: false }
+                      : msg
+                  ),
+                }
+              : group
+          )
+        );
+      }
+      await refreshVersions();
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "An error occurred");
+      form.setValue("query", values.query);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEditMessage = (message: MessageType) => {

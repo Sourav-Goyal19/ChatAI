@@ -67,17 +67,15 @@ model Message {
 }
 
 model File {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String
-  conversationId  String?  @db.ObjectId
-  messageId       String?  @db.ObjectId
-  fileName        String
-  fileType        String
-  size            Int
-  storageProvider String
-  storageUrl      String
-  createdAt       DateTime @default(now())
-  user            User     @relation(fields: [userId], references: [clerkId])
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String
+  conversationId String?  @db.ObjectId
+  messageId      String?  @db.ObjectId
+  fileName       String
+  fileType       String
+  storageUrl     String
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [clerkId])
 }
 
 model Memory {

@@ -17,6 +17,9 @@ const ChatLayout = async ({ children }: { children: React.ReactNode }) => {
     where: {
       userId,
     },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
   // console.log(conversations);
   return (
