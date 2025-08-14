@@ -99,8 +99,11 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     const group = versionGroups.find((g) => g.id === groupId);
     if (!group) return { current: 0, total: 0 };
 
-    const totalPairs = Math.floor(group.messages.length / 2);
-    const currentPair = (currentVersionIndices[groupId] || 0) / 2 + 1;
+    const totalPairs = Math.floor(group.versions.length / 2);
+    const currentIndex = currentVersionIndices[groupId] || 0;
+
+    const normalizedIndex = Math.floor(currentIndex / 2) * 2;
+    const currentPair = Math.floor(normalizedIndex / 2) + 1;
 
     return { current: currentPair, total: totalPairs };
   };
@@ -112,15 +115,22 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     const group = versionGroups.find((g) => g.id === groupId);
     if (!group) return;
 
-    const messagePairs = Math.floor(group.messages.length / 2);
+    const totalPairs = Math.floor(group.versions.length / 2);
     const currentIndex = currentVersionIndices[groupId] || 0;
 
-    let newIndex = currentIndex;
-    if (direction === "prev" && currentIndex > 0) {
-      newIndex = currentIndex - 2;
-    } else if (direction === "next" && currentIndex < (messagePairs - 1) * 2) {
-      newIndex = currentIndex + 2;
+    const normalizedCurrentIndex = Math.floor(currentIndex / 2) * 2;
+    const currentPairIndex = Math.floor(normalizedCurrentIndex / 2);
+
+    let newPairIndex = currentPairIndex;
+    if (direction === "prev" && currentPairIndex > 0) {
+      newPairIndex = currentPairIndex - 1;
+    } else if (direction === "next" && currentPairIndex < totalPairs - 1) {
+      newPairIndex = currentPairIndex + 1;
     }
+
+    const newIndex = newPairIndex * 2;
+
+    if (newIndex === normalizedCurrentIndex) return;
 
     try {
       const response = await fetch(
@@ -199,7 +209,6 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     if (!messageToEdit || messageToEdit.role !== "user") return;
 
     // setIsLoading(true);
-
     setEditingMessageId(null);
     editForm.reset();
 
@@ -224,6 +233,8 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       const groupId = messageToEdit.versionGroupId;
       const group = versionGroups.find((g) => g.id === groupId);
       if (!group) return;
+
+      const newVersionIndex = group.versions.length;
 
       const newUserMessage: MessageType = {
         id: `editing-user-${Date.now()}`,
@@ -251,8 +262,6 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         streaming: true,
       };
 
-      const newVersionIndex = Math.ceil((group.messages.length + 2) / 2) - 1;
-
       setCurrentVersionIndices((prev) => ({
         ...prev,
         [groupId]: newVersionIndex,
@@ -263,6 +272,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
           g.id === groupId
             ? {
                 ...g,
+                versions: [...g.versions, newUserMessage.id, newAIMessage.id],
                 messages: [...g.messages, newUserMessage, newAIMessage],
               }
             : g
@@ -292,7 +302,6 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         );
       }
 
-      toast.success("Message edited successfully!");
       await refreshVersions();
     } catch (error: any) {
       console.error("Edit error:", error);
