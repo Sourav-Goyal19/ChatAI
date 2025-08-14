@@ -2,7 +2,7 @@ import React from "react";
 import MDEditor from "@uiw/react-md-editor";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { Bot, User, Edit3 } from "lucide-react";
+import { Bot, User, Edit3, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MessageType } from "@/types";
 import { VersionNavigation } from "./version-navigation";
@@ -29,6 +29,9 @@ export const MessageList: React.FC<MessageListProps> = ({
         const showVersionControls =
           hasMultipleVersions(message.versionGroupId) &&
           message.role === "user";
+
+        const fileCount =
+          message.role === "user" ? message.files?.length || 0 : 0;
 
         return (
           <div key={message.id}>
@@ -65,13 +68,24 @@ export const MessageList: React.FC<MessageListProps> = ({
                       }}
                     />
                   ) : (
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                      {fileCount > 0 && (
+                        <div className="flex items-center gap-1 text-xs opacity-80 pt-1 border-t border-primary-foreground/20">
+                          <Paperclip className="h-3 w-3" />
+                          <span>
+                            {fileCount} {fileCount === 1 ? "File" : "Files"}{" "}
+                            attached
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </Card>
 
-                {message.role === "user" && (
+                {message.role === "user" && fileCount === 0 && (
                   <Button
                     variant="ghost"
                     size="sm"

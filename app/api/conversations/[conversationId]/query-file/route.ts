@@ -164,26 +164,30 @@ export async function POST(
             versionGroupId: vg.id,
           },
         });
-        const [aiMsg, files] = await Promise.all([
-          client.message.create({
-            data: {
-              content: finishResponse.text,
-              role: "assistant",
-              sender: "assistant",
-              conversationId: conversationId,
-              versionGroupId: vg.id,
-            },
-          }),
-          client.file.createMany({
-            data: uploadedFiles.map((file) => ({
-              fileName: file.originalName,
-              fileType: file.type,
-              storageUrl: file.url,
-              conversationId: conversationId,
-              userId: user.id,
-            })),
-          }),
-        ]);
+        const aiMsg = await client.message.create({
+          data: {
+            content: finishResponse.text,
+            role: "assistant",
+            sender: "assistant",
+            conversationId: conversationId,
+            versionGroupId: vg.id,
+          },
+        });
+
+        await Promise.all(
+          uploadedFiles.map((file) =>
+            client.file.create({
+              data: {
+                fileName: file.originalName,
+                fileType: file.type,
+                storageUrl: file.url,
+                conversationId: conversationId,
+                userId: user.id,
+                messageId: userMsg.id,
+              },
+            })
+          )
+        );
 
         await client.versionGroup.update({
           where: {

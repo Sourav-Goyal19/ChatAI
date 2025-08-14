@@ -111,6 +111,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   const onSubmit = async (values: FormType) => {
     if (!values.query.trim()) return;
     form.reset();
+    setIsLoading(true);
 
     try {
       const tempVersionGroup: VersionGroupType = {
@@ -138,7 +139,10 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
 
       const res = await fetch(`/api/conversations/${params.chatId}/query`, {
         method: "POST",
-        body: JSON.stringify({ query: values.query }),
+        body: JSON.stringify({
+          query: values.query,
+          isFirstQuery: firstQuery ? true : false,
+        }),
       });
 
       if (!res.ok) throw new Error(await res.text());
@@ -168,7 +172,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
             : group
         )
       );
-
+      setIsLoading(false);
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -196,7 +200,6 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       console.error(error);
       toast.error(error.message || "An error occurred");
       form.setValue("query", values.query);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -207,30 +210,36 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   ) => {
     if (!values.query.trim() && files.length === 0) return;
     form.reset();
-
-    console.log(values);
-    console.log(files);
+    setIsLoading(true);
 
     try {
+      const tempUserMessageId = `temp-user-${Date.now()}`;
+      const tempVersionGroupId = `temp-${Date.now()}`;
+
       const tempVersionGroup: VersionGroupType = {
-        id: `temp-${Date.now()}`,
+        id: tempVersionGroupId,
         createdAt: new Date(),
         conversationId: params.chatId as string,
         versions: [],
         messages: [
           {
-            id: `temp-user-${Date.now()}`,
+            id: tempUserMessageId,
             createdAt: new Date(),
             updatedAt: new Date(),
             conversationId: params.chatId as string,
-            versionGroupId: `temp-${Date.now()}`,
+            versionGroupId: tempVersionGroupId,
             sender: "user",
             content: values.query,
             role: "user",
-            files: files.map((file) => ({
-              name: file.name,
-              type: file.type,
-              size: file.size,
+            files: files.map((file, index) => ({
+              id: `temp-file-${Date.now()}-${index}`,
+              createdAt: new Date(),
+              userId: "temp",
+              conversationId: params.chatId as string,
+              messageId: tempUserMessageId,
+              fileName: file.name,
+              fileType: file.type,
+              storageUrl: "",
             })),
             streaming: false,
           },
@@ -279,7 +288,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
             : group
         )
       );
-
+      setIsLoading(false);
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -307,7 +316,6 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       console.error(error);
       toast.error(error.message || "An error occurred");
       form.setValue("query", values.query);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -324,6 +332,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     if (!messageToEdit || messageToEdit.role !== "user") return;
 
     setEditingMessageId(null);
+    setIsLoading(true);
 
     try {
       const res = await fetch(
@@ -346,9 +355,10 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       if (!group) return;
 
       const newVersionIndex = group.versions.length;
+      const newUserMessageId = `editing-user-${Date.now()}`;
 
       const newUserMessage: MessageType = {
-        id: `editing-user-${Date.now()}`,
+        id: newUserMessageId,
         createdAt: new Date(),
         updatedAt: new Date(),
         conversationId: params.chatId as string,
@@ -356,7 +366,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         sender: "user",
         content: values.content,
         role: "user",
-        files: [],
+        files: messageToEdit.files || [],
         streaming: false,
       };
 
@@ -389,7 +399,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
             : g
         )
       );
-
+      setIsLoading(false);
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -420,7 +430,6 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         error.response?.data?.error || error.message || "Failed to edit message"
       );
       setEditingMessageId(editingMessageId);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -430,10 +439,13 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   }, [allMessages]);
 
   useEffect(() => {
-    if (firstQuery) {
-      form.setValue("query", firstQuery);
-      onSubmit({ query: firstQuery });
+    const callFirstQuery = async () => {
+      form.setValue("query", firstQuery!);
+      await onSubmit({ query: firstQuery! });
       clearQuery();
+    };
+    if (firstQuery) {
+      callFirstQuery();
     }
   }, [firstQuery]);
 

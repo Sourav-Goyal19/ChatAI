@@ -26,6 +26,17 @@ export type MessageType = {
   sender: string;
   content: string;
   role: "user" | "assistant";
-  files: any[];
+  files: FileType[];
   streaming: boolean;
+};
+
+export type FileType = {
+  id: string;
+  createdAt: Date;
+  userId: string;
+  conversationId: string | null;
+  messageId: string;
+  fileName: string;
+  fileType: string;
+  storageUrl: string;
 };

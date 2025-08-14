@@ -35,9 +35,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleSubmit = async (values: { query: string }) => {
     if (attachedFiles.length > 0) {
-      await onSubmitWithFiles(values, attachedFiles);
+      onSubmitWithFiles(values, attachedFiles);
     } else {
-      await onSubmit(values);
+      onSubmit(values);
     }
     setAttachedFiles([]);
   };

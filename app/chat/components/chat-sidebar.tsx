@@ -134,18 +134,18 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
                   </SidebarMenuButton>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction className="opacity-0 group-hover:opacity-100">
+                      <SidebarMenuAction className="opacity-0 group-hover:opacity-100 cursor-pointer">
                         <MoreHorizontal className="h-4 w-4" />
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="right" align="start">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer">
                         <Edit3 className="h-4 w-4 mr-2" />
                         Rename
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-destructive"
+                        className="text-destructive cursor-pointer"
                         onClick={() => mutation.mutate(chat.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />

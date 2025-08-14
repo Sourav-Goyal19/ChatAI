@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { streamText } from "ai";
+import { streamText, generateText } from "ai";
 // import { queryChain } from "@/lib/chains";
 // import { HumanMessage } from "@langchain/core/messages";
 import client from "@/lib/prismadb";
@@ -13,6 +13,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 const querySchema = z.object({
   query: z.string().min(1, "Query is required"),
+  isFirstQuery: z.boolean().default(false),
 });
 
 const openrouter = createOpenRouter({
@@ -73,7 +74,7 @@ export async function POST(
       );
     }
 
-    const { query } = parsed.data;
+    const { query, isFirstQuery } = parsed.data;
 
     // const aires = await queryChain.invoke({
     //   history: [new HumanMessage(query)],
@@ -131,6 +132,14 @@ export async function POST(
       system: SYSTEM_PROMPT.replace("{memories}", memoriesStr),
       onFinish: async (finishResponse) => {
         try {
+          if (isFirstQuery) {
+            generateConversationName(
+              query,
+              finishResponse.text,
+              conversationId
+            );
+          }
+
           const aiMessage = await client.message.create({
             data: {
               content: finishResponse.text,
@@ -176,4 +185,38 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+async function generateConversationName(
+  user: string,
+  ai: string,
+  conversationId: string
+) {
+  const res = await generateText({
+    model: google("gemini-1.5-flash"),
+    messages: [
+      {
+        role: "user",
+        content: user,
+      },
+      {
+        role: "assistant",
+        content: ai,
+      },
+      {
+        role: "user",
+        content:
+          "Generate a short and meaningful title (under 5 words) for this conversation based on the user's query and the assistant's response. The title should be relevant, clear, and reflect the core topic discussed.",
+      },
+    ],
+  });
+
+  await client.conversation.update({
+    where: {
+      id: conversationId,
+    },
+    data: {
+      title: res.text.trim(),
+    },
+  });
 }

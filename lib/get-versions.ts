@@ -15,6 +15,9 @@ export async function getVersionGroups(
         orderBy: {
           createdAt: "asc",
         },
+        include: {
+          files: true,
+        },
       },
     },
     orderBy: {
