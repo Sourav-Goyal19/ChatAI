@@ -32,14 +32,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { usePathname, useRouter } from "next/navigation";
+import { LoadingModal } from "@/components/ui/loading-modal";
 
 interface ChatSidebarProps {
   conversations: ConversationType[];
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
-  const pathname = usePathname();
   const router = useRouter();
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredChats, setFilteredChats] =
     useState<ConversationType[]>(conversations);
@@ -83,7 +84,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
   });
 
   return (
-    <Sidebar className="border-r border-border/40">
+    <Sidebar className="border-r">
       <SidebarHeader className="border-b border-border/40 p-4">
         <Link href="/chat" className="w-full">
           <Button className="w-full justify-start gap-2 h-10" size="default">
@@ -92,7 +93,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
           </Button>
         </Link>
       </SidebarHeader>
-
       <SidebarContent className="px-2 overflow-hidden">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -109,7 +109,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
             </div>
           </SidebarGroupContent>
         </SidebarGroup>
-
+        {mutation.isPending ? <LoadingModal /> : null}
         <SidebarSeparator />
 
         <SidebarGroup>
