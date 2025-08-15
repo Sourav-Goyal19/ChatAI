@@ -2,7 +2,7 @@ import path from "path";
 import { Readable } from "stream";
 import client from "@/lib/prismadb";
 import { memories } from "@/lib/mem0";
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import sanitize from "sanitize-filename";
 import cloudinary from "@/lib/cloudinary";
 import { createGroq } from "@ai-sdk/groq";
@@ -11,6 +11,10 @@ import { streamText, type FilePart } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { currentUser } from "@clerk/nextjs/server";
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_API_KEY,
+});
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
