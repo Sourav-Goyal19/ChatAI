@@ -65,7 +65,7 @@ export default function ChatHomePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center bg-card">
         <div className="max-w-md mx-auto text-center space-y-6 px-4">
           <div className="relative">
             <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center">

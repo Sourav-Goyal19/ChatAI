@@ -11,7 +11,7 @@ import { MessageList } from "./message-list";
 import { useQueryStore } from "@/zustand/store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditMessageDialog } from "./edit-message-dialog";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { VersionGroupType, MessageType } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -30,6 +30,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   const params = useParams();
   const { query: firstQuery, clearQuery } = useQueryStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [versionGroups, setVersionGroups] =
     useState<VersionGroupType[]>(initialVersionGroups);
@@ -39,7 +40,61 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     Record<string, number>
   >({});
 
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const userScrollTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const lastScrollTopRef = useRef(0);
+  const isStreamingRef = useRef(false);
+
   const allMessages = getCurrentMessages(versionGroups, currentVersionIndices);
+
+  const isNearBottom = useCallback(() => {
+    if (!scrollContainerRef.current) return true;
+
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+    const threshold = 100;
+    return scrollHeight - scrollTop - clientHeight < threshold;
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current || !isStreamingRef.current) return;
+
+    const currentScrollTop = scrollContainerRef.current.scrollTop;
+
+    if (currentScrollTop < lastScrollTopRef.current) {
+      setShouldAutoScroll(false);
+      setIsUserScrolling(true);
+
+      if (userScrollTimeoutRef.current) {
+        clearTimeout(userScrollTimeoutRef.current);
+      }
+
+      userScrollTimeoutRef.current = setTimeout(() => {
+        setIsUserScrolling(false);
+      }, 150);
+    }
+
+    if (isNearBottom() && !shouldAutoScroll) {
+      setShouldAutoScroll(true);
+    }
+
+    lastScrollTopRef.current = currentScrollTop;
+  }, [isNearBottom, shouldAutoScroll]);
+
+  const scrollToBottom = useCallback(() => {
+    if (shouldAutoScroll && !isUserScrolling && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [shouldAutoScroll, isUserScrolling]);
+
+  const resetAutoScroll = useCallback(() => {
+    setShouldAutoScroll(true);
+    setIsUserScrolling(false);
+    if (userScrollTimeoutRef.current) {
+      clearTimeout(userScrollTimeoutRef.current);
+    }
+  }, []);
 
   const refreshVersions = async () => {
     try {
@@ -112,6 +167,8 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     if (!values.query.trim()) return;
     form.reset();
     setIsLoading(true);
+    resetAutoScroll();
+    isStreamingRef.current = true;
 
     try {
       const tempVersionGroup: VersionGroupType = {
@@ -173,6 +230,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         )
       );
       setIsLoading(false);
+
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -195,12 +253,15 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
           )
         );
       }
+
+      isStreamingRef.current = false;
       await refreshVersions();
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "An error occurred");
       form.setValue("query", values.query);
       setIsLoading(false);
+      isStreamingRef.current = false;
     }
   };
 
@@ -211,6 +272,8 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     if (!values.query.trim() && files.length === 0) return;
     form.reset();
     setIsLoading(true);
+    resetAutoScroll();
+    isStreamingRef.current = true;
 
     try {
       const tempUserMessageId = `temp-user-${Date.now()}`;
@@ -289,6 +352,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         )
       );
       setIsLoading(false);
+
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -311,18 +375,22 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
           )
         );
       }
+
+      isStreamingRef.current = false;
       await refreshVersions();
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "An error occurred");
       form.setValue("query", values.query);
       setIsLoading(false);
+      isStreamingRef.current = false;
     }
   };
 
   const handleEditMessage = (message: MessageType) => {
     setEditingMessageId(message.id);
     setEditContent(message.content);
+    setShouldAutoScroll(false);
   };
 
   const handleEditSubmit = async (values: { content: string }) => {
@@ -332,24 +400,9 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     if (!messageToEdit || messageToEdit.role !== "user") return;
 
     setEditingMessageId(null);
-    setIsLoading(true);
+    resetAutoScroll();
 
     try {
-      const res = await fetch(
-        `/api/conversations/${params.chatId}/edit/${editingMessageId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ editedQuery: values.content }),
-        }
-      );
-
-      if (!res.ok) throw new Error(await res.text());
-
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-
       const groupId = messageToEdit.versionGroupId;
       const group = versionGroups.find((g) => g.id === groupId);
       if (!group) return;
@@ -370,8 +423,45 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         streaming: false,
       };
 
+      setCurrentVersionIndices((prev) => ({
+        ...prev,
+        [groupId]: newVersionIndex,
+      }));
+
+      const tempAIMessageId = `temp-editing-ai-${Date.now()}`;
+
+      setVersionGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? {
+                ...g,
+                versions: [...g.versions, newUserMessage.id, tempAIMessageId],
+                messages: [...g.messages, newUserMessage],
+              }
+            : g
+        )
+      );
+
+      setIsLoading(true);
+      isStreamingRef.current = true;
+
+      const res = await fetch(
+        `/api/conversations/${params.chatId}/edit/${editingMessageId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ editedQuery: values.content }),
+        }
+      );
+
+      if (!res.ok) throw new Error(await res.text());
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
       const newAIMessage: MessageType = {
-        id: `editing-ai-${Date.now()}`,
+        id: tempAIMessageId,
         createdAt: new Date(),
         updatedAt: new Date(),
         conversationId: params.chatId as string,
@@ -383,23 +473,18 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         streaming: true,
       };
 
-      setCurrentVersionIndices((prev) => ({
-        ...prev,
-        [groupId]: newVersionIndex,
-      }));
-
       setVersionGroups((prev) =>
         prev.map((g) =>
           g.id === groupId
             ? {
                 ...g,
-                versions: [...g.versions, newUserMessage.id, newAIMessage.id],
-                messages: [...g.messages, newUserMessage, newAIMessage],
+                messages: [...g.messages, newAIMessage],
               }
             : g
         )
       );
       setIsLoading(false);
+
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -423,6 +508,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         );
       }
 
+      isStreamingRef.current = false;
       await refreshVersions();
     } catch (error: any) {
       console.error("Edit error:", error);
@@ -431,12 +517,13 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       );
       setEditingMessageId(editingMessageId);
       setIsLoading(false);
+      isStreamingRef.current = false;
     }
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [allMessages]);
+    scrollToBottom();
+  }, [allMessages, scrollToBottom]);
 
   useEffect(() => {
     const callFirstQuery = async () => {
@@ -449,9 +536,26 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     }
   }, [firstQuery]);
 
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      scrollContainer.removeEventListener("scroll", handleScroll);
+      if (userScrollTimeoutRef.current) {
+        clearTimeout(userScrollTimeoutRef.current);
+      }
+    };
+  }, [handleScroll]);
+
   return (
     <div className="flex flex-col h-full bg-background w-full">
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-6 bg-card"
+      >
         <div className="max-w-6xl mx-auto space-y-6">
           {allMessages.length === 0 ? (
             <div className="text-center py-12">
@@ -516,7 +620,10 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
 
       <EditMessageDialog
         open={editingMessageId !== null}
-        onOpenChange={() => setEditingMessageId(null)}
+        onOpenChange={() => {
+          setEditingMessageId(null);
+          setShouldAutoScroll(true);
+        }}
         content={editContent}
         onSubmit={handleEditSubmit}
         isLoading={isLoading}

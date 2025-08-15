@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,9 +33,15 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
   isLoading,
 }) => {
   const editForm = useForm<EditFormType>({
-    defaultValues: { content },
+    defaultValues: { content: "" },
     resolver: zodResolver(editFormSchema),
   });
+
+  useEffect(() => {
+    if (open && content) {
+      editForm.reset({ content });
+    }
+  }, [open, content, editForm]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

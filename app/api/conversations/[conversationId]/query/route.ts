@@ -95,7 +95,7 @@ export async function POST(
       include: { messages: true },
     });
 
-    // Fetching memories and history in parallel
+    // fetching memories and history in parallel
     const [relevantMemories, versionGroups] = await Promise.all([
       memories.search(query, { user_id: conversationId }),
       client.versionGroup.findMany({
