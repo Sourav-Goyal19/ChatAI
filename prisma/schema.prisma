@@ -16,23 +16,21 @@ model User {
   avatarUrl     String?
   conversations Conversation[]
   files         File[]
-  memories      Memory[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
 
 model Conversation {
-  id                String           @id @default(auto()) @map("_id") @db.ObjectId
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
   userId            String
   title             String?
   model             String?
   contextWindowSize Int?
   lastActivityAt    DateTime?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  user              User             @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  user              User           @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   messages          Message[]
-  contextSegments   ContextSegment[]
   versionGroups     VersionGroup[]
 }
 
@@ -76,26 +74,5 @@ model File {
   storageUrl     String
   createdAt      DateTime @default(now())
   user           User     @relation(fields: [userId], references: [clerkId])
-  message        Message  @relation(fields: [messageId], references: [id])
-}
-
-model Memory {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String
-  key       String
-  value     String
-  source    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [clerkId])
-}
-
-model ContextSegment {
-  id             String       @id @default(auto()) @map("_id") @db.ObjectId
-  conversationId String       @db.ObjectId
-  segmentIndex   Int
-  messages       String[]     @db.ObjectId
-  tokenCount     Int
-  createdAt      DateTime     @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  message        Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }

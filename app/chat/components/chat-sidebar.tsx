@@ -139,11 +139,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="right" align="start">
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive cursor-pointer"
                         onClick={() => mutation.mutate(chat.id)}
