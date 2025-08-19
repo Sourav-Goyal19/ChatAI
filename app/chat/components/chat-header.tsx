@@ -5,7 +5,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function ChatHeader() {
   return (
-    <header className="flex items-center justify-between border-b border-border/40 px-4 py-3 backdrop-blur bg-sidebar">
+    <header className="flex items-center justify-between px-4 py-3 backdrop-blur bg-[#212121]">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden">
           <Menu className="h-4 w-4" />
@@ -13,9 +13,9 @@ export function ChatHeader() {
         <h1 className="text-lg font-semibold">ChatGPT</h1>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <ModeToggle />
-      </div>
+      </div> */}
     </header>
   );
 }

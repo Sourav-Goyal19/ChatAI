@@ -19,6 +19,7 @@ import {
   hasMultipleVersions,
   getVersionInfo,
 } from "../conversation-utils";
+import Image from "next/image";
 
 interface ChatHomePageProps {
   versionGroups: VersionGroupType[];
@@ -550,13 +551,25 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
     };
   }, [handleScroll]);
 
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      document.getElementById("querybox")?.focus();
+    };
+
+    document.documentElement.addEventListener("keydown", handleKeydown);
+
+    return () => {
+      document.documentElement.removeEventListener("keydown", handleKeydown);
+    };
+  }, []);
+
   return (
-    <div className="flex flex-col h-full bg-background w-full">
+    <div className="flex flex-col h-full bg-[#212121] w-full">
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto px-4 py-6 bg-card"
       >
-        <div className="max-w-6xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           {allMessages.length === 0 ? (
             <div className="text-center py-12">
               <Bot className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -582,21 +595,16 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
           )}
           {isLoading && (
             <div className="flex gap-4 justify-start">
-              <Avatar className="h-8 w-8 mt-1">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <Card className="max-w-[80%] p-4 bg-card text-card-foreground border-border">
+              <div className="max-w-[80%] p-4 bg-card text-card-foreground border-border">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-[#303030] rounded-full animate-bounce"></div>
                     <div
-                      className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                      className="w-2 h-2 bg-[#303030] rounded-full animate-bounce"
                       style={{ animationDelay: "0.1s" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                      className="w-2 h-2 bg-[#303030] rounded-full animate-bounce"
                       style={{ animationDelay: "0.2s" }}
                     ></div>
                   </div>
@@ -604,7 +612,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
                     AI is thinking...
                   </span>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
           <div ref={messagesEndRef} />

@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { File, X, Paperclip } from "lucide-react";
+import { File, X, Paperclip, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -134,11 +134,11 @@ export const FileUploader = ({
       <Button
         variant="ghost"
         size="icon"
-        className="h-11 w-11 shrink-0"
+        className="h-11 w-11 shrink-0 hover:bg-[#212121] transition"
         type="button"
         onClick={() => setIsDialogOpen(true)}
       >
-        <Paperclip className="h-4 w-4" />
+        <Plus className="h-4 w-4" />
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
@@ -152,10 +152,8 @@ export const FileUploader = ({
           <div className="space-y-4">
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                isDragActive
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:bg-accent/50"
+              className={`border-2 rounded-2xl p-6 text-center cursor-pointer transition-colors ${
+                isDragActive ? "bg-[#303030]" : "bg-[#303030]"
               }`}
             >
               <input {...getInputProps()} />
@@ -190,7 +188,7 @@ export const FileUploader = ({
                   {previews.map((preview, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 border rounded"
+                      className="flex items-center justify-between p-2 border rounded-xl"
                     >
                       <div className="flex items-center gap-2">
                         {preview.preview ? (

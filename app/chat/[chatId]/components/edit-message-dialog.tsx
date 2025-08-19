@@ -53,7 +53,7 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
           <Textarea
             {...editForm.register("content")}
             placeholder="Edit your message..."
-            className="min-h-[100px] resize-none"
+            className="min-h-[100px] resize-none bg-[#212121] rounded-2xl"
             rows={4}
           />
           <div className="flex justify-end gap-2">

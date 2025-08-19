@@ -1,4 +1,4 @@
-import { Send } from "lucide-react";
+import { ArrowUp, Send } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import React, { useRef, useEffect, useState } from "react";
@@ -54,7 +54,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="border-t border-border bg-sidebar p-4">
+    <div className="bg-[#212121] p-4">
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
         className="max-w-3xl mx-auto"
@@ -72,7 +72,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </div>
           )}
 
-          <div className="flex gap-3 items-end">
+          <div className="flex gap-2 items-center bg-[#303030] p-2 rounded-full">
             <FileUploader
               onFilesSelected={(files) => {
                 setAttachedFiles(files);
@@ -82,11 +82,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               }}
               currentFiles={attachedFiles}
             />
-            <div className="flex-1" ref={textareaRef}>
+            <div
+              className="flex-1 items-center justify-center"
+              ref={textareaRef}
+            >
               <Textarea
                 {...form.register("query")}
                 placeholder="Type your message here..."
-                className="min-h-[44px] max-h-[120px] resize-none bg-background"
+                className="min-h-[44px] max-h-[120px] resize-none border-0"
                 onKeyDown={handleKeyDown}
                 id="querybox"
                 rows={1}
@@ -100,9 +103,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 isLoading ||
                 (!form.watch("query")?.trim() && attachedFiles.length === 0)
               }
-              className="h-11 w-11 shrink-0"
+              className="h-11 w-11 shrink-0 bg-white rounded-full"
             >
-              <Send className="h-4 w-4" />
+              <ArrowUp className="size-5 text-black" />
             </Button>
           </div>
         </div>

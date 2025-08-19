@@ -97,7 +97,7 @@ export async function POST(
 
     // fetching memories and history in parallel
     const [relevantMemories, versionGroups] = await Promise.all([
-      memories.search(query, { user_id: conversationId }),
+      memories.search(query, { user_id: user.id }),
       client.versionGroup.findMany({
         where: { conversationId },
         include: {
@@ -112,6 +112,8 @@ export async function POST(
       .map((entry) => `- ${entry.memory}`)
       .join("\n");
 
+    console.log("Memories:", memoriesStr);
+
     const history = versionGroups
       .reverse()
       .flatMap((group) => {
@@ -125,8 +127,8 @@ export async function POST(
       }));
 
     const stream = streamText({
-      // model: google("gemini-1.5-flash"),
-      model: groq("moonshotai/kimi-k2-instruct"),
+      model: google("gemini-1.5-flash"),
+      // model: groq("moonshotai/kimi-k2-instruct"),
       // model: openrouter("deepseek/deepseek-chat-v3-0324:free"),
       messages: [...history, { role: "user", content: query }],
       system: SYSTEM_PROMPT.replace("{memories}", memoriesStr),
@@ -155,7 +157,7 @@ export async function POST(
               { role: "user", content: query },
               { role: "assistant", content: finishResponse.text },
             ],
-            { user_id: conversationId }
+            { user_id: user.id }
           );
 
           await client.versionGroup.update({

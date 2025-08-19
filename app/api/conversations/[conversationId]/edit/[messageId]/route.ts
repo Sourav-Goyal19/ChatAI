@@ -6,6 +6,7 @@ import { google } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
 import { isValidObjectId } from "mongoose";
 import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
@@ -35,8 +36,14 @@ export async function PUT(
 ) {
   try {
     const body = await req.json();
+    const user = await currentUser();
     const { conversationId, messageId } = await params;
     // console.log(messageId);
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized user" }, { status: 401 });
+    }
+
     if (!isValidObjectId(conversationId) || !isValidObjectId(messageId)) {
       return NextResponse.json(
         {
@@ -108,7 +115,7 @@ export async function PUT(
         take: 5,
       }),
       memories.search(editedQuery, {
-        user_id: conversationId,
+        user_id: user.id,
       }),
     ]);
 
@@ -166,7 +173,7 @@ export async function PUT(
         const [previousEditedMemory] = await memories.getAll({
           filters: {
             AND: [
-              { user_id: conversationId },
+              { user_id: user.id },
               {
                 created_at: {
                   gte: editedVersionGroup.createdAt,
@@ -187,7 +194,7 @@ export async function PUT(
                 { role: "user", content: editedQuery },
                 { role: "assistant", content: finishResponse.text },
               ],
-              { user_id: conversationId }
+              { user_id: user.id }
             );
       },
     });

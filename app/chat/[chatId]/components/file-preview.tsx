@@ -22,7 +22,7 @@ export const FilePreview = ({ file, onRemove }: FilePreviewProps) => {
       <button
         type="button"
         onClick={onRemove}
-        className="absolute -top-2 -right-2 bg-background rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border"
+        className="absolute -top-2 -right-2 bg-background rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border cursor-pointer"
       >
         <X className="h-3 w-3" />
       </button>

@@ -2,37 +2,23 @@
 
 import axios from "axios";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { UserButton } from "@clerk/nextjs";
 import { ConversationType } from "@/types";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Plus, Search, MoreHorizontal, Trash2, Edit3 } from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenuAction,
-  SidebarSeparator,
-} from "@/components/ui/sidebar";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, MoreHorizontal, Trash2, MessageSquare } from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast";
-import { usePathname, useRouter } from "next/navigation";
 import { LoadingModal } from "@/components/ui/loading-modal";
+import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 
 interface ChatSidebarProps {
   conversations: ConversationType[];
@@ -47,10 +33,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
 
   useEffect(() => {
     const filtered = conversations.filter((chat) =>
-      chat.id.toLowerCase().includes(searchQuery.toLowerCase())
+      (chat.title || chat.id).toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredChats(filtered);
-    console.log(pathname);
   }, [searchQuery, conversations]);
 
   const mutation = useMutation({
@@ -68,9 +53,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
       conversation: ConversationType;
     }) => {
       setFilteredChats((prev) =>
-        prev.filter((chat) => chat.id != conversation.id)
+        prev.filter((chat) => chat.id !== conversation.id)
       );
-      if (pathname == `/chat/${conversation.id}`) {
+      if (pathname === `/chat/${conversation.id}`) {
         router.push("/chat");
       }
       toast.success(message);
@@ -78,92 +63,104 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
     onError: (err: any) => {
       console.error("Failed to delete conversation", err);
       toast.error(
-        err.response.data.error || err.message || "Something bad happened"
+        err.response?.data?.error || err.message || "Something bad happened"
       );
     },
   });
 
   return (
-    <Sidebar className="border-r">
-      <SidebarHeader className="border-b border-border/40 p-4">
-        <Link href="/chat" className="w-full">
-          <Button className="w-full justify-start gap-2 h-10" size="default">
-            <Plus className="h-4 w-4" />
-            New Chat
-          </Button>
-        </Link>
-      </SidebarHeader>
-      <SidebarContent className="px-2 overflow-hidden">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <div className="px-2 py-2">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search chats..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-9"
-                />
-              </div>
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        {mutation.isPending ? <LoadingModal /> : null}
-        <SidebarSeparator />
+    <Sidebar className="bg-[#181818] border-r border-zinc-800">
+      {mutation.isPending && <LoadingModal />}
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-xs font-medium text-muted-foreground">
-            Recent Chats
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredChats.map((chat) => (
-                <SidebarMenuItem key={chat.id}>
-                  <SidebarMenuButton asChild className="group">
-                    <a
-                      href={`/chat/${chat.id}`}
-                      className="flex items-center gap-2 p-2"
+      <SidebarContent className="flex flex-col h-full">
+        <div className="p-4 space-y-3">
+          <Link href="/chat" className="block">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-[#303030] transition-colors cursor-pointer text-zinc-300 hover:text-white">
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-sm font-medium">New chat</span>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-[#303030] transition-colors text-zinc-300">
+            <Search className="h-4 w-4" />
+            <div className="flex-1">
+              <Input
+                placeholder="Search chats"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border-0 bg-transparent p-0 h-auto text-sm font-medium placeholder:text-zinc-100 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 px-4">
+          <div className="mb-3">
+            <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+              Chats
+            </h2>
+          </div>
+
+          <div className="space-y-1">
+            {filteredChats.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-zinc-500">
+                {searchQuery ? "No chats found" : "No recent chats"}
+              </div>
+            ) : (
+              filteredChats.map((chat) => (
+                <div key={chat.id} className="group relative">
+                  <Link href={`/chat/${chat.id}`}>
+                    <div
+                      className={`flex items-center justify-between px-3 py-2 rounded-2xl transition-colors cursor-pointer hover:bg-[#303030] ${
+                        pathname === `/chat/${chat.id}`
+                          ? "bg-[#303030] text-white"
+                          : "text-zinc-300 hover:text-white"
+                      }`}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="truncate text-sm font-medium">
-                          {chat.title || chat.id || "Untitled Chat"}
+                        <div className="truncate text-sm">
+                          {chat.title || `Chat ${chat.id.slice(0, 8)}`}
                         </div>
                       </div>
-                    </a>
-                  </SidebarMenuButton>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction className="opacity-0 group-hover:opacity-100 cursor-pointer">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </SidebarMenuAction>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="start">
-                      <DropdownMenuItem
-                        className="text-destructive cursor-pointer"
-                        onClick={() => mutation.mutate(chat.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/40 p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex justify-center">
-              <UserButton showName />
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-700 rounded transition-all">
+                            <MoreHorizontal className="h-3 w-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          side="right"
+                          align="start"
+                          className="w-40"
+                        >
+                          <DropdownMenuItem
+                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20 cursor-pointer"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              mutation.mutate(chat.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </Link>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-zinc-800">
+          <div className="flex justify-center">
+            <UserButton showName />
+          </div>
+        </div>
+      </SidebarContent>
     </Sidebar>
   );
 };
