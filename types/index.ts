@@ -15,6 +15,7 @@ export type VersionGroupType = {
   createdAt: Date;
   conversationId: string;
   versions: string[];
+  index: number;
 };
 
 export type MessageType = {

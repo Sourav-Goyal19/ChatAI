@@ -147,9 +147,9 @@ export async function POST(
     );
 
     const stream = streamText({
-      model: google("gemini-2.5-flash"),
+      // model: google("gemini-2.5-flash"),
       // model: groq("moonshotai/kimi-k2-instruct"),
-      // model: openrouter("deepseek/deepseek-chat-v3-0324:free"),
+      model: openrouter("openai/gpt-4o"),
       messages: [
         ...history,
         {

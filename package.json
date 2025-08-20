@@ -42,6 +42,7 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.23.12",
     "lucide-react": "^0.539.0",
     "mem0ai": "^2.1.37",
     "mongoose": "^8.17.1",

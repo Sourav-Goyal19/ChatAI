@@ -28,7 +28,11 @@ interface EditMessageDialogProps {
   isLoading: boolean;
   files: MessageFileType[];
   onOpenChange: () => void;
-  onSubmit: (values: { content: string }, files: File[]) => void;
+  onSubmit: (
+    values: { content: string },
+    files: File[],
+    keptExistingFiles: FileType[]
+  ) => void;
 }
 
 const editFormSchema = z.object({
@@ -117,7 +121,10 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
   isLoading,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [existingFiles, setExistingFiles] = useState<FileType[]>([]);
+  const [keptExistingFiles, setKeptExistingFiles] = useState<FileType[]>([]);
+  const [originalExistingFiles, setOriginalExistingFiles] = useState<
+    FileType[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editForm = useForm<EditFormType>({
@@ -131,7 +138,8 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
       const existing = initialFiles.filter(
         (file): file is FileType => "storageUrl" in file
       );
-      setExistingFiles(existing);
+      setOriginalExistingFiles(existing);
+      setKeptExistingFiles(existing);
       setSelectedFiles([]);
     }
   }, [open, content, initialFiles, editForm]);
@@ -139,7 +147,7 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const totalFiles =
-      existingFiles.length + selectedFiles.length + files.length;
+      keptExistingFiles.length + selectedFiles.length + files.length;
 
     if (totalFiles > 5) {
       alert("You can only attach up to 5 files total.");
@@ -153,7 +161,7 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
   };
 
   const removeExistingFile = (index: number) => {
-    setExistingFiles((prev) => prev.filter((_, i) => i !== index));
+    setKeptExistingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const removeSelectedFile = (index: number) => {
@@ -163,7 +171,7 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
   const handleSubmit = (values: EditFormType) => {
     if (
       !values.content.trim() &&
-      existingFiles.length === 0 &&
+      keptExistingFiles.length === 0 &&
       selectedFiles.length === 0
     ) {
       editForm.setError("content", {
@@ -172,10 +180,10 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
       return;
     }
 
-    onSubmit(values, selectedFiles);
+    onSubmit(values, selectedFiles, keptExistingFiles);
   };
 
-  const totalFiles = existingFiles.length + selectedFiles.length;
+  const totalFiles = keptExistingFiles.length + selectedFiles.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -222,11 +230,11 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
               />
             </div>
 
-            {(existingFiles.length > 0 || selectedFiles.length > 0) && (
+            {(keptExistingFiles.length > 0 || selectedFiles.length > 0) && (
               <div className="space-y-2">
                 <p className="text-sm text-gray-400">Attached files:</p>
                 <div className="flex flex-wrap gap-2">
-                  {existingFiles.map((file, index) => (
+                  {keptExistingFiles.map((file, index) => (
                     <FilePreview
                       key={`existing-${file.id}`}
                       file={file}

@@ -5,11 +5,11 @@ import { Bot } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { ChatInput } from "./chat-input";
 import { useForm } from "react-hook-form";
-import { Card } from "@/components/ui/card";
 import { useParams } from "next/navigation";
 import { MessageList } from "./message-list";
 import { useQueryStore } from "@/zustand/store";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { EditMessageDialog } from "./edit-message-dialog";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import type {
@@ -18,13 +18,11 @@ import type {
   MessageFileType,
   FileType,
 } from "@/types";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   getCurrentMessages,
   hasMultipleVersions,
   getVersionInfo,
 } from "../conversation-utils";
-import Image from "next/image";
 
 interface ChatHomePageProps {
   versionGroups: VersionGroupType[];
@@ -34,6 +32,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   versionGroups: initialVersionGroups,
 }) => {
   const params = useParams();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [editContent, setEditContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -184,6 +183,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         createdAt: new Date(),
         conversationId: params.chatId as string,
         versions: [],
+        index: 0,
         messages: [
           {
             id: `temp-user-${Date.now()}`,
@@ -239,6 +239,8 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       );
       setIsLoading(false);
 
+      queryClient.invalidateQueries({ queryKey: ["conversations-all"] });
+
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -264,6 +266,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
 
       isStreamingRef.current = false;
       await refreshVersions();
+      queryClient.invalidateQueries({ queryKey: ["conversations-all"] });
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "An error occurred");
@@ -292,6 +295,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         createdAt: new Date(),
         conversationId: params.chatId as string,
         versions: [],
+        index: 0,
         messages: [
           {
             id: tempUserMessageId,
@@ -404,7 +408,8 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
 
   const handleEditSubmit = async (
     values: { content: string },
-    newFiles: File[] = []
+    newFiles: File[] = [],
+    keptExistingFiles: FileType[] = []
   ) => {
     if (!editingMessageId) return;
 
@@ -422,11 +427,8 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       const newVersionIndex = group.versions.length;
       const newUserMessageId = `editing-user-${Date.now()}`;
 
-      const existingFiles = editingFiles.filter(
-        (file): file is FileType => "storageUrl" in file
-      );
       const tempFiles = [
-        ...existingFiles,
+        ...keptExistingFiles,
         ...newFiles.map((file, index) => ({
           id: `temp-edit-file-${Date.now()}-${index}`,
           createdAt: new Date(),
@@ -478,8 +480,8 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       const formData = new FormData();
       formData.append("editedQuery", values.content);
 
-      const existingFileIds = existingFiles.map((file) => file.id);
-      formData.append("existingFileIds", JSON.stringify(existingFileIds));
+      const keptFileIds = keptExistingFiles.map((file) => file.id);
+      formData.append("existingFileIds", JSON.stringify(keptFileIds));
 
       newFiles.forEach((file, index) => {
         formData.append(`newFiles[${index}]`, file);
@@ -565,6 +567,15 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   }, [allMessages, scrollToBottom]);
 
   useEffect(() => {
+    const initialIndices: Record<string, number> = {};
+    versionGroups.forEach((group) => {
+      initialIndices[group.id] = group.index || 0;
+    });
+
+    setCurrentVersionIndices(initialIndices);
+  }, [versionGroups]);
+
+  useEffect(() => {
     const callFirstQuery = async () => {
       form.setValue("query", firstQuery!);
       await onSubmit({ query: firstQuery! });
@@ -633,22 +644,37 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
           )}
           {isLoading && (
             <div className="flex gap-4 justify-start">
-              <div className="max-w-[80%] p-4 bg-card text-card-foreground border-border">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-[#303030] rounded-full animate-bounce"></div>
+              <div className="max-w-[80%] p-4 bg-card text-card-foreground border-border rounded-lg">
+                <div className="flex items-center justify-center">
+                  <div className="flex gap-1.5">
                     <div
-                      className="w-2 h-2 bg-[#303030] rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
+                      className="w-3 h-3 rounded-full shadow-sm"
+                      style={{
+                        backgroundColor: "#404040",
+                        animationDuration: "1.4s",
+                        animationDelay: "0s",
+                        animation: "bounce 1.4s infinite",
+                      }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-[#303030] rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
+                      className="w-3 h-3 rounded-full shadow-sm"
+                      style={{
+                        backgroundColor: "#505050",
+                        animationDuration: "1.4s",
+                        animationDelay: "0.2s",
+                        animation: "bounce 1.4s infinite",
+                      }}
+                    ></div>
+                    <div
+                      className="w-3 h-3 rounded-full shadow-sm"
+                      style={{
+                        backgroundColor: "#606060",
+                        animationDuration: "1.4s",
+                        animationDelay: "0.4s",
+                        animation: "bounce 1.4s infinite",
+                      }}
                     ></div>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    AI is thinking...
-                  </span>
                 </div>
               </div>
             </div>
