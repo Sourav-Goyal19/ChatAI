@@ -34,85 +34,101 @@ ChatAI is a versatile GPT-powered chat assistant that lets users ask questions, 
 To run ChatAI locally:
 
 1. Clone the repository:
- ```bash
-   git clone https://github.com/your-username/chat-ai.git
-   cd chat-ai
- ```
+
+```bash
+  git clone https://github.com/your-username/chat-ai.git
+  cd chat-ai
+```
+
 2. Install dependencies:
+
 ```bash
  npm install
 ```
+
 3. Set up environment variables:
-Create a .env file with the following (replace placeholders):
+   Create a .env file with the following (replace placeholders):
+
 ```bash
   # Clerk authentication
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your-clerk-publishable-key"
   CLERK_SECRET_KEY="your-clerk-secret-key"
-  
+
   # MongoDB connection
   MONGODB_URL="your-mongodb-connection-string"
-  
+
   # Clerk redirect URLs
   NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
   NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/"
   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/"
-  
+
   # Database URL (same as MONGODB_URL)
   DATABASE_URL="same as above"
-  
+
   # Mem0 API
   MEM0_API_KEY="your-mem0-api-key"
-  
+
   # Google APIs
   GOOGLE_API_KEY="your-google-api-key"
   GOOGLE_GENERATIVE_AI_API_KEY="same as above"
-  
+
   # Groq API
   GROQ_API_KEY="your-groq-api-key"
-  
+
   # OpenRouter API
   OPENROUTER_API_KEY="your-openrouter-api-key"
   OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"
+
+  # Cloudinary
+  CLOUDINARY_CLOUD_NAME="your-cloudinary-cloud-name"
+  CLOUDINARY_API_KEY="your-cloudinary-api-key"
+  CLOUDINARY_API_SECRET="your-cloudinary-api-secret"
+  CLOUDINARY_URL="cloudinary://<api_key>:<api_secret>@<cloud_name>"
 ```
+
 4. Initialize the database:
+
 ```bash
   npx prisma generate
   npx prisma db push
 ```
+
 5. Start the dev server:
- ```bash
-   npm run dev
- ```
+
+```bash
+  npm run dev
+```
+
 ## Technologies Used
 
-- **Frontend:** Next.js 14, TypeScript, TailwindCSS  
-- **UI Library:** Shadcn UI  
-- **State Management:** Zustand, Tanstack Query  
-- **Database:** MongoDB, Prisma ORM  
-- **Auth:** Clerk  
-- **APIs:** Groq, OpenRouter, Google Generative AI  
-- **Storage:** Cloudinary (files), Mem0 (memory)  
-- **Deployment:** Vercel  
+- **Frontend:** Next.js 14, TypeScript, TailwindCSS
+- **UI Library:** Shadcn UI
+- **State Management:** Zustand, Tanstack Query
+- **Database:** MongoDB, Prisma ORM
+- **Auth:** Clerk
+- **APIs:** Groq, OpenRouter, Google Generative AI
+- **Storage:** Cloudinary (files), Mem0 (memory)
+- **Deployment:** Vercel
 
-## Configuration  
+## Configuration
 
-Ensure all environment variables (listed above) are set in your `.env` file.  
+Ensure all environment variables (listed above) are set in your `.env` file.
 
-## Usage  
+## Usage
 
-Try the live demo: [ChatAI Assistant](https://chat-ai-iota-ashy.vercel.app)  
+Try the live demo: [ChatAI Assistant](https://chat-ai-iota-ashy.vercel.app)
 
-## Contributing  
+## Contributing
 
-Contributions are welcome! Follow these steps:  
+Contributions are welcome! Follow these steps:
 
-1. Fork the repository.  
-2. Create a branch (`git checkout -b feature/your-feature`).  
-3. Commit changes (`git commit -m 'Add feature'`).  
-4. Push to the branch (`git push origin feature/your-feature`).  
-5. Open a Pull Request.  
+1. Fork the repository.
+2. Create a branch (`git checkout -b feature/your-feature`).
+3. Commit changes (`git commit -m 'Add feature'`).
+4. Push to the branch (`git push origin feature/your-feature`).
+5. Open a Pull Request.
 
-## License  
+## License
 
-License to be decided (MIT/Apache/etc.).  
+License to be decided (MIT/Apache/etc.).
