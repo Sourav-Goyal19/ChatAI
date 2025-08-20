@@ -34,19 +34,19 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   versionGroups: initialVersionGroups,
 }) => {
   const params = useParams();
-  const { query: firstQuery, clearQuery } = useQueryStore();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { query: firstQuery, clearQuery } = useQueryStore();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [versionGroups, setVersionGroups] =
     useState<VersionGroupType[]>(initialVersionGroups);
 
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState("");
-  const [editingFiles, setEditingFiles] = useState<MessageFileType[]>([]);
   const [currentVersionIndices, setCurrentVersionIndices] = useState<
     Record<string, number>
   >({});
+  const [editingFiles, setEditingFiles] = useState<MessageFileType[]>([]);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
