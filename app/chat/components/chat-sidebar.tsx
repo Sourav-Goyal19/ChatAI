@@ -119,7 +119,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
                     >
                       <div className="flex-1 min-w-0">
                         <div className="truncate text-sm">
-                          {chat.title || `Chat ${chat.id.slice(0, 8)}`}
+                          {chat.title ||
+                            "New Chat" ||
+                            `Chat ${chat.id.slice(0, 8)}`}
                         </div>
                       </div>
 

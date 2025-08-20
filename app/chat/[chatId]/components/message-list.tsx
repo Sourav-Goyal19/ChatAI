@@ -23,17 +23,36 @@ interface MessageListProps {
   navigateVersion: (groupId: string, direction: "prev" | "next") => void;
 }
 
-const FileDisplay: React.FC<{ file: FileType | File }> = ({ file }) => {
-  const fileName = "fileName" in file ? file.fileName : file.name;
-  const fileType = "fileType" in file ? file.fileType : file.type;
-  const storageUrl = "storageUrl" in file ? file.storageUrl : "";
+const FileDisplay: React.FC<{ file: FileType | File | any }> = ({ file }) => {
+  const normalizedFile = React.useMemo(() => {
+    if (file instanceof File) {
+      return {
+        fileName: file.name,
+        fileType: file.type,
+        storageUrl: URL.createObjectURL(file),
+        isTemp: true,
+      };
+    }
 
-  const isImage = fileType.startsWith("image/");
+    if (file && typeof file === "object") {
+      return {
+        fileName: file.fileName || file.name,
+        fileType: file.fileType || file.type,
+        storageUrl: file.storageUrl || file.url,
+        id: file.id,
+      };
+    }
+
+    console.warn("Invalid file object:", file);
+    return null;
+  }, [file]);
+
+  if (!normalizedFile) return null;
+
+  const { fileName, fileType, storageUrl } = normalizedFile;
+  const isImage = fileType?.startsWith("image/");
   const isPDF = fileType === "application/pdf";
-  const isText =
-    fileType.startsWith("text/") ||
-    fileType === "text/plain" ||
-    fileType === "text/csv";
+  const isText = fileType?.startsWith("text/");
 
   const getFileIcon = () => {
     if (isImage) return <ImageIcon className="h-4 w-4" />;
@@ -42,35 +61,19 @@ const FileDisplay: React.FC<{ file: FileType | File }> = ({ file }) => {
     return <FileIcon className="h-4 w-4" />;
   };
 
-  if (isImage) {
-    const imageSource =
-      file instanceof File ? URL.createObjectURL(file) : storageUrl;
-
-    if (!imageSource) {
-      return (
-        <div className="flex items-center gap-2 p-2 bg-[#404040] rounded-lg border border-primary-foreground/20 max-w-xs">
-          {getFileIcon()}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-white">
-              {fileName}
-            </p>
-            <p className="text-xs text-gray-400">Image</p>
-          </div>
-        </div>
-      );
-    }
-
+  if (isImage && storageUrl) {
     return (
       <div className="relative group cursor-pointer">
         <Image
-          src={imageSource}
+          src={storageUrl}
           alt={fileName}
           width={200}
           height={200}
           className="rounded-lg object-cover max-w-xs max-h-48 border border-primary-foreground/20"
           style={{ width: "auto", height: "auto" }}
-          onError={() => {
+          onError={(e) => {
             console.warn(`Failed to load image: ${fileName}`);
+            e.currentTarget.style.display = "none";
           }}
         />
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
@@ -86,7 +89,7 @@ const FileDisplay: React.FC<{ file: FileType | File }> = ({ file }) => {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate text-white">{fileName}</p>
         <p className="text-xs text-gray-400 capitalize">
-          {fileType.split("/")[1] || fileType}
+          {fileType?.split("/")[1] || fileType || "file"}
         </p>
       </div>
     </div>

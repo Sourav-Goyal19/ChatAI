@@ -24,6 +24,9 @@ export async function GET(
           orderBy: {
             createdAt: "asc",
           },
+          include: {
+            files: true,
+          },
         },
       },
       orderBy: {
