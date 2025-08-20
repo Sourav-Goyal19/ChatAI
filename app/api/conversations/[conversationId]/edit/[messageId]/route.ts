@@ -1,17 +1,22 @@
 import { z } from "zod";
-import { streamText } from "ai";
+import path from "path";
+import { Readable } from "stream";
 import client from "@/lib/prismadb";
 import { memories } from "@/lib/mem0";
 import { google } from "@ai-sdk/google";
+import sanitize from "sanitize-filename";
+import cloudinary from "@/lib/cloudinary";
 import { createGroq } from "@ai-sdk/groq";
 import { isValidObjectId } from "mongoose";
 import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { streamText, type FilePart } from "ai";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 const editQuerySchema = z.object({
-  editedQuery: z.string().min(1, "Edited query is required"),
+  editedQuery: z.string().min(0, ""),
+  existingFileIds: z.string().optional(),
 });
 
 const openrouter = createOpenRouter({
@@ -35,10 +40,9 @@ export async function PUT(
   }
 ) {
   try {
-    const body = await req.json();
     const user = await currentUser();
+    const formdata = await req.formData();
     const { conversationId, messageId } = await params;
-    // console.log(messageId);
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized user" }, { status: 401 });
@@ -53,20 +57,35 @@ export async function PUT(
       );
     }
 
-    const { error, data } = editQuerySchema.safeParse(body);
+    const editedQuery = formdata.get("editedQuery")?.toString() || "";
+    const existingFileIdsStr = formdata.get("existingFileIds")?.toString();
 
-    if (error) {
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 400,
-        }
-      );
+    let existingFileIds: string[] = [];
+    if (existingFileIdsStr) {
+      try {
+        existingFileIds = JSON.parse(existingFileIdsStr);
+      } catch (error) {
+        console.error("Error parsing existingFileIds:", error);
+      }
     }
 
-    const { editedQuery } = data;
+    const newFiles: File[] = [];
+    formdata.forEach((value, key) => {
+      if (value instanceof File && key.startsWith("newFiles[")) {
+        newFiles.push(value);
+      }
+    });
+
+    if (
+      !editedQuery.trim() &&
+      existingFileIds.length === 0 &&
+      newFiles.length === 0
+    ) {
+      return NextResponse.json(
+        { error: "Either content or files must be provided" },
+        { status: 400 }
+      );
+    }
 
     const editedVersionGroup = await client.versionGroup.findFirst({
       where: {
@@ -88,15 +107,78 @@ export async function PUT(
       );
     }
 
-    const editMessage = await client.message.create({
-      data: {
-        role: "user",
-        sender: "user",
-        content: editedQuery,
-        conversationId: conversationId,
-        versionGroupId: editedVersionGroup?.id,
-      },
-    });
+    const uploadedFiles = await Promise.all(
+      newFiles.map(async (file) => {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const safeName = sanitize(path.parse(file.name).name);
+
+        const uploadPromise = new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: "raw",
+              public_id: safeName,
+              folder: "chatgpt-clone",
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+
+          const readable = new Readable();
+          readable.push(buffer);
+          readable.push(null);
+          readable.pipe(uploadStream);
+        });
+
+        const result: any = await uploadPromise;
+        return {
+          url: result.secure_url as string,
+          type: file.type,
+          originalName: file.name,
+        };
+      })
+    );
+
+    const existingFiles =
+      existingFileIds.length > 0
+        ? await client.file.findMany({
+            where: {
+              id: { in: existingFileIds },
+            },
+          })
+        : [];
+
+    const allFiles = [
+      ...existingFiles,
+      ...uploadedFiles.map((f) => ({
+        storageUrl: f.url,
+        fileType: f.type,
+        fileName: f.originalName,
+      })),
+    ];
+
+    const filesData: FilePart[] =
+      allFiles.length > 0
+        ? (
+            await Promise.all(
+              allFiles.map(async (file) => {
+                try {
+                  const res = await fetch(file.storageUrl);
+                  const data = await res.arrayBuffer();
+                  return {
+                    type: "file" as const,
+                    data: Buffer.from(data),
+                    mediaType: file.fileType,
+                  } as FilePart;
+                } catch (error) {
+                  console.error(`Error fetching file ${file.fileName}:`, error);
+                  return null;
+                }
+              })
+            )
+          ).filter((file): file is FilePart => file !== null)
+        : [];
 
     const [versionGroups, relevantMemories] = await Promise.all([
       client.versionGroup.findMany({
@@ -140,19 +222,34 @@ export async function PUT(
       .map((entry) => entry.memory)
       .join("\n");
 
+    const messageContent =
+      filesData.length > 0
+        ? [{ type: "text" as const, text: editedQuery }, ...filesData]
+        : editedQuery;
+
     const text = streamText({
-      // model: google("gemini-1.5-flash"),
-      model: groq("moonshotai/kimi-k2-instruct"),
+      model: google("gemini-2.5-flash"),
+      // model: groq("moonshotai/kimi-k2-instruct"),
       // model: openrouter("deepseek/deepseek-chat-v3-0324:free"),
       messages: [
         ...history,
         {
           role: "user",
-          content: editedQuery,
+          content: messageContent,
         },
       ],
       system: SYSTEM_PROMPT.replace("{memories}", memoriesStr),
       onFinish: async (finishResponse) => {
+        const editMessage = await client.message.create({
+          data: {
+            role: "user",
+            sender: "user",
+            content: editedQuery,
+            conversationId: conversationId,
+            versionGroupId: editedVersionGroup?.id,
+          },
+        });
+
         const aiMessage = await client.message.create({
           data: {
             role: "assistant",
@@ -162,6 +259,7 @@ export async function PUT(
             versionGroupId: editedVersionGroup?.id,
           },
         });
+
         await client.versionGroup.update({
           where: { id: editedVersionGroup.id },
           data: {
@@ -169,6 +267,36 @@ export async function PUT(
             index: editedVersionGroup.versions.length,
           },
         });
+
+        await Promise.all(
+          uploadedFiles.map((file) =>
+            client.file.create({
+              data: {
+                fileName: file.originalName,
+                fileType: file.type,
+                storageUrl: file.url,
+                conversationId: conversationId,
+                userId: user.id,
+                messageId: editMessage.id,
+              },
+            })
+          )
+        );
+
+        await Promise.all(
+          existingFiles.map((file) =>
+            client.file.create({
+              data: {
+                fileName: file.fileName,
+                fileType: file.fileType,
+                storageUrl: file.storageUrl,
+                conversationId: conversationId,
+                userId: user.id,
+                messageId: editMessage.id,
+              },
+            })
+          )
+        );
 
         const [previousEditedMemory] = await memories.getAll({
           filters: {

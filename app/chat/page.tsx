@@ -4,7 +4,7 @@ import type React from "react";
 
 import { z } from "zod";
 import axios from "axios";
-import { Send } from "lucide-react";
+import { ArrowUp, Plus, Send } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useUser } from "@clerk/nextjs";
 import { useForm } from "react-hook-form";
@@ -64,8 +64,8 @@ export default function ChatHomePage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center bg-card">
+    <div className="flex flex-col h-full bg-[#212121]">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center bg-[#212121] ">
         <div className="max-w-md mx-auto text-center space-y-6 px-4">
           <div className="relative">
             <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
@@ -117,32 +117,32 @@ export default function ChatHomePage() {
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-border p-4 bg-sidebar">
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="max-w-3xl mx-auto w-full"
+      <div className="flex gap-2 max-w-4xl w-full mx-auto items-center bg-[#303030] p-2 rounded-full mb-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 shrink-0 hover:bg-[#212121] transition"
+          type="button"
         >
-          <div className="flex gap-3 items-end">
-            <div className="flex-1 relative">
-              <Textarea
-                {...form.register("query")}
-                placeholder="Type your message here..."
-                className="min-h-[44px] max-h-[120px] resize-none pr-12 bg-background"
-                onKeyDown={handleKeyDown}
-                rows={1}
-              />
-              <div ref={textareaRef} />
-            </div>
-            <Button
-              type="submit"
-              size="icon"
-              className="h-11 w-11 shrink-0"
-              disabled={form.formState.isSubmitting}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </form>
+          <Plus className="h-4 w-4" />
+        </Button>
+        <div className="flex-1 items-center justify-center" ref={textareaRef}>
+          <Textarea
+            {...form.register("query")}
+            placeholder="Type your message here..."
+            className="min-h-[44px] max-h-[120px] resize-none border-0"
+            onKeyDown={handleKeyDown}
+            id="querybox"
+            rows={1}
+          />
+        </div>
+        <Button
+          type="submit"
+          size="icon"
+          className="h-11 w-11 shrink-0 bg-white rounded-full"
+        >
+          <ArrowUp className="size-5 text-black" />
+        </Button>
       </div>
     </div>
   );

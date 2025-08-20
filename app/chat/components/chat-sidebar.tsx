@@ -75,13 +75,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
       <SidebarContent className="flex flex-col h-full">
         <div className="p-4 space-y-3">
           <Link href="/chat" className="block">
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-[#303030] transition-colors cursor-pointer text-zinc-300 hover:text-white">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#303030] transition-colors cursor-pointer text-zinc-300 hover:text-white">
               <MessageSquare className="h-4 w-4" />
               <span className="text-sm font-medium">New chat</span>
             </div>
           </Link>
 
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-[#303030] transition-colors text-zinc-300">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#303030] transition-colors text-zinc-300">
             <Search className="h-4 w-4" />
             <div className="flex-1">
               <Input
@@ -111,7 +111,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ conversations }) => {
                 <div key={chat.id} className="group relative">
                   <Link href={`/chat/${chat.id}`}>
                     <div
-                      className={`flex items-center justify-between px-3 py-2 rounded-2xl transition-colors cursor-pointer hover:bg-[#303030] ${
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer hover:bg-[#303030] ${
                         pathname === `/chat/${chat.id}`
                           ? "bg-[#303030] text-white"
                           : "text-zinc-300 hover:text-white"

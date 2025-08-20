@@ -3,7 +3,6 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import MDEditor from "@uiw/react-md-editor";
-import { Button } from "@/components/ui/button";
 import type { MessageType, FileType } from "@/types";
 import { VersionNavigation } from "./version-navigation";
 
@@ -14,6 +13,7 @@ import {
   File as FileIcon,
   Image as ImageIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface MessageListProps {
   messages: MessageType[];
@@ -133,9 +133,14 @@ export const MessageList: React.FC<MessageListProps> = ({
                       {message.files && message.files.length > 0 && (
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2">
-                            {message.files.map((file) => (
-                              <FileDisplay key={file.id} file={file} />
-                            ))}
+                            {message.files.map((file, index) => {
+                              const fileKey =
+                                "id" in file
+                                  ? file.id
+                                  : `temp-${index}-${file.name || "file"}`;
+
+                              return <FileDisplay key={fileKey} file={file} />;
+                            })}
                           </div>
                         </div>
                       )}

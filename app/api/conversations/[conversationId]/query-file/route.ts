@@ -36,10 +36,10 @@ export async function POST(
   }
 ) {
   try {
+    const user = await currentUser();
     const formdata = await req.formData();
     const { conversationId } = await params;
     const query = formdata.get("query")?.toString();
-    const user = await currentUser();
 
     if (!user) {
       return NextResponse.json(

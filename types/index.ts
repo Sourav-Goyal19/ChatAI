@@ -26,7 +26,7 @@ export type MessageType = {
   sender: string;
   content: string;
   role: "user" | "assistant";
-  files: FileType[];
+  files: MessageFileType[];
   streaming: boolean;
 };
 
@@ -39,4 +39,7 @@ export type FileType = {
   fileName: string;
   fileType: string;
   storageUrl: string;
+  _tempFile?: File;
 };
+
+export type MessageFileType = FileType | File;

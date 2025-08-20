@@ -44,6 +44,10 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+:root {
+  --radius: 0.65rem;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

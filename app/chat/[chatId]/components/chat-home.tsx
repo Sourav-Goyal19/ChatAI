@@ -12,7 +12,12 @@ import { useQueryStore } from "@/zustand/store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditMessageDialog } from "./edit-message-dialog";
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import type { VersionGroupType, MessageType } from "@/types";
+import type {
+  VersionGroupType,
+  MessageType,
+  MessageFileType,
+  FileType,
+} from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   getCurrentMessages,
@@ -35,8 +40,10 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [versionGroups, setVersionGroups] =
     useState<VersionGroupType[]>(initialVersionGroups);
+
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [editingFiles, setEditingFiles] = useState<MessageFileType[]>([]);
   const [currentVersionIndices, setCurrentVersionIndices] = useState<
     Record<string, number>
   >({});
@@ -391,10 +398,14 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
   const handleEditMessage = (message: MessageType) => {
     setEditingMessageId(message.id);
     setEditContent(message.content);
+    setEditingFiles(message.files || []);
     setShouldAutoScroll(false);
   };
 
-  const handleEditSubmit = async (values: { content: string }) => {
+  const handleEditSubmit = async (
+    values: { content: string },
+    newFiles: File[] = []
+  ) => {
     if (!editingMessageId) return;
 
     const messageToEdit = allMessages.find((m) => m.id === editingMessageId);
@@ -411,6 +422,24 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       const newVersionIndex = group.versions.length;
       const newUserMessageId = `editing-user-${Date.now()}`;
 
+      const existingFiles = editingFiles.filter(
+        (file): file is FileType => "storageUrl" in file
+      );
+      const tempFiles = [
+        ...existingFiles,
+        ...newFiles.map((file, index) => ({
+          id: `temp-edit-file-${Date.now()}-${index}`,
+          createdAt: new Date(),
+          userId: "temp",
+          conversationId: params.chatId as string,
+          messageId: newUserMessageId,
+          fileName: file.name,
+          fileType: file.type,
+          storageUrl: "",
+          _tempFile: file,
+        })),
+      ];
+
       const newUserMessage: MessageType = {
         id: newUserMessageId,
         createdAt: new Date(),
@@ -420,7 +449,7 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         sender: "user",
         content: values.content,
         role: "user",
-        files: messageToEdit.files || [],
+        files: tempFiles,
         streaming: false,
       };
 
@@ -446,12 +475,21 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
       setIsLoading(true);
       isStreamingRef.current = true;
 
+      const formData = new FormData();
+      formData.append("editedQuery", values.content);
+
+      const existingFileIds = existingFiles.map((file) => file.id);
+      formData.append("existingFileIds", JSON.stringify(existingFileIds));
+
+      newFiles.forEach((file, index) => {
+        formData.append(`newFiles[${index}]`, file);
+      });
+
       const res = await fetch(
         `/api/conversations/${params.chatId}/edit/${editingMessageId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ editedQuery: values.content }),
+          body: formData,
         }
       );
 
@@ -630,9 +668,11 @@ export const ChatHomePage: React.FC<ChatHomePageProps> = ({
         open={editingMessageId !== null}
         onOpenChange={() => {
           setEditingMessageId(null);
+          setEditingFiles([]);
           setShouldAutoScroll(true);
         }}
         content={editContent}
+        files={editingFiles}
         onSubmit={handleEditSubmit}
         isLoading={isLoading}
       />
