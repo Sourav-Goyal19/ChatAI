@@ -10,7 +10,7 @@ export function ChatHeader() {
         <SidebarTrigger className="md:hidden">
           <Menu className="h-4 w-4" />
         </SidebarTrigger>
-        <h1 className="text-lg font-semibold">ChatGPT</h1>
+        <h1 className="text-lg font-semibold text-white">ChatGPT</h1>
       </div>
 
       {/* <div className="flex items-center gap-2">

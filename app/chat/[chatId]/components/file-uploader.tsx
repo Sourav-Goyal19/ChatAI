@@ -134,18 +134,18 @@ export const FileUploader = ({
       <Button
         variant="ghost"
         size="icon"
-        className="h-11 w-11 shrink-0 hover:bg-[#212121] transition"
+        className="h-11 w-11 shrink-0 hover:bg-[#212121] transition rounded-full"
         type="button"
         onClick={() => setIsDialogOpen(true)}
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-4 w-4 text-white" />
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Attach Files</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-white">
               Upload images, PDFs, CSV, or text files (max 5MB each)
             </DialogDescription>
           </DialogHeader>
@@ -157,8 +157,8 @@ export const FileUploader = ({
               }`}
             >
               <input {...getInputProps()} />
-              <div className="flex flex-col items-center justify-center gap-2">
-                <Paperclip className="h-8 w-8 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center gap-2 text-white">
+                <Paperclip className="h-8 w-8" />
                 {isDragActive ? (
                   <p className="font-medium">Drop the files here</p>
                 ) : (
@@ -180,7 +180,7 @@ export const FileUploader = ({
             {error && <p className="text-sm text-red-500">{error}</p>}
 
             {previews.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-2 text-white">
                 <h3 className="text-sm font-medium">
                   Selected Files ({previews.length}/{maxFiles})
                 </h3>
@@ -225,7 +225,7 @@ export const FileUploader = ({
               </div>
             )}
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 text-white">
               <Button
                 type="button"
                 variant="outline"

@@ -161,7 +161,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <Textarea
                 {...form.register("query")}
                 placeholder="Ask anything"
-                className="min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent placeholder:text-gray-400 text-foreground focus:outline-none focus:ring-0 px-0 py-2"
+                className="min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent placeholder:text-gray-400 text-white focus:outline-none focus:ring-0 px-0 py-2"
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 id="querybox"

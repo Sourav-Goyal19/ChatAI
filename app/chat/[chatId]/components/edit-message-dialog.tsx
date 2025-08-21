@@ -198,7 +198,7 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
           <Textarea
             {...editForm.register("content")}
             placeholder="Edit your message..."
-            className="min-h-[100px] resize-none bg-[#212121] rounded-md"
+            className="min-h-[100px] resize-none bg-[#212121] rounded-md text-white"
             rows={4}
           />
           {editForm.formState.errors.content && (
@@ -215,7 +215,7 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={totalFiles >= 5}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-white hover:text-white"
               >
                 <Upload className="h-4 w-4" />
                 Add Files ({totalFiles}/5)
@@ -254,7 +254,12 @@ export const EditMessageDialog: React.FC<EditMessageDialogProps> = ({
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onOpenChange}>
+            <Button
+              type="button"
+              className="text-white"
+              variant="outline"
+              onClick={onOpenChange}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

@@ -79,12 +79,12 @@ export default function ChatHomePage() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-primary"
+                  className="text-white"
                 >
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+              <h1 className="text-3xl font-bold text-white mb-2">
                 How can I help you today?
               </h1>
             </div>
@@ -98,14 +98,14 @@ export default function ChatHomePage() {
                 className="h-10 w-10 shrink-0 hover:bg-[#212121] transition-colors rounded-xl"
                 type="button"
               >
-                <Plus className="h-5 w-5" />
+                <Plus className="h-5 w-5 text-white" />
               </Button>
 
               <div className="flex-1 min-h-[40px] max-h-[120px] flex items-center">
                 <Textarea
                   {...form.register("query")}
                   placeholder="Ask anything"
-                  className="min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent placeholder:text-gray-400 text-foreground focus:outline-none focus:ring-0 px-0 py-2"
+                  className="min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent placeholder:text-gray-400 text-white focus:outline-none focus:ring-0 px-0 py-2"
                   onKeyDown={handleKeyDown}
                   id="querybox"
                   rows={1}

@@ -128,7 +128,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                         fontSize: "0.875rem",
                         lineHeight: "1.625rem",
                         whiteSpace: "pre-wrap",
-                        color: "var(--foreground)",
+                        color: "white",
                       }}
                     />
                   ) : (
@@ -169,7 +169,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-white hover:bg-[#303030]"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-white hover:bg-[#303030] hover:text-white"
                     onClick={() => {
                       navigator.clipboard.writeText(message.content);
                       toast.success("Text copied to clipboard.");
@@ -181,7 +181,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-white hover:bg-[#303030]"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-white hover:bg-[#303030] hover:text-white"
                       onClick={() => onEditMessage(message)}
                     >
                       <Edit3 className="h-3 w-3" />
