@@ -128,8 +128,8 @@ export async function POST(
 
     const stream = streamText({
       // model: google("gemini-2.0-flash"),
-      // model: groq("moonshotai/kimi-k2-instruct"),
-      model: openrouter("meta-llama/llama-3.3-70b-instruct"),
+      model: groq("moonshotai/kimi-k2-instruct"),
+      // model: openrouter("meta-llama/llama-3.3-70b-instruct"),
       messages: [...history, { role: "user", content: query }],
       system: SYSTEM_PROMPT.replace("{memories}", memoriesStr),
       onFinish: async (finishResponse) => {
